@@ -7,6 +7,9 @@ import pandas as pd
 import numpy as np
 
 
+__version__ = '0.1'
+
+
 def converter(files=[], **keywds):
     """
     Summary
@@ -234,6 +237,6 @@ def converter(files=[], **keywds):
         properties=results,
         references=pif.Reference(
             url='https://www.astm.org/Standards/E111.htm'),
-        tags=['ASTM E111'])
+        tags=['ASTM E111', 'version {}'.format(__version__)])
     # job's done!
     return results

@@ -11,7 +11,7 @@ with open('LICENSE') as f:
 
 setup(
     name='citrine_converters',
-    version='0.1.0',
+    version='0.1',
     description='X-to-PIF converters',
     long_description=readme,
     author='Branden Kappes',
