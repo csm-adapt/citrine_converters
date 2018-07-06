@@ -1,4 +1,5 @@
-
+# TODO The pif.System should hold the results--no need for an intermediate
+# object.
 class mechanical_properties():
     """
     Class Description:

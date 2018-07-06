@@ -1,7 +1,4 @@
-
-
-
-
+# TODO The role of this class isn't clear.
 class stress_strain_curve(object ):
 
     """
@@ -13,7 +10,7 @@ class stress_strain_curve(object ):
     4. It can also be used to reverse the data if in compression
     """
     """--------------------_init_--------------------"""
-    def _init_(self,epsilon,sigma,parameters):
+    def __init__(self,epsilon,sigma,parameters):
         # ##########
         # merge on time
         #Taken from origianl begin

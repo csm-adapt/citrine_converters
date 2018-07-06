@@ -1,3 +1,4 @@
+# TODO Should this be a class or a function generator?
 class Normalize(object):
     """
     Class Description:

@@ -1,5 +1,10 @@
 from tools import forked_normalizer
 from tools import hough.py
+
+
+# TODO Should HoughTransform be a class or a generator? Is there stateful
+# information from the Hough Transform that we should track, or can we
+# add that directly to a pif.System object?
 class hough_transform(stress_strain_data):
     """
     Class Description:
@@ -10,7 +15,7 @@ class hough_transform(stress_strain_data):
     4. Estimate slope (is there any reason to have this not here do other classes need theta and distance?)
     """
     """--------------------_init_hough--------------------"""
-    def _init_hough(self,sigma,epsilon,parameters):
+    def __init__(self, sigma, epsilon, parameters):
         """
 
         :param sigma: stress
