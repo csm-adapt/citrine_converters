@@ -12,15 +12,13 @@ import pandas as pd
 import matplotlib as mpl
 mpl.use('Agg')
 from matplotlib import pyplot as plt
-from scipy.ndimage.filters import gaussian_filter
-from bisect import bisect_left as bisect
 from pypif import pif
-from citrine_converters.astm_e111 import (
+from citrine_converters.old.astm_e111 import (
     MechanicalProperties,
     approximate_elastic_regime_from_hough,
     set_elastic)
-from citrine_converters.astm_e111 import converter as astm_converter
-from citrine_converters.tools import (
+from citrine_converters.old.astm_e111 import converter as astm_converter
+from citrine_converters.old.tools import (
     HoughSpace,
     Normalized,
     linear_merge,

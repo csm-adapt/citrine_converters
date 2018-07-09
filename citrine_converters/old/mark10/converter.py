@@ -4,7 +4,7 @@ from pypif import pif
 from StringIO import StringIO
 import numpy as np
 import pandas as pd
-from ..tools import replace_if_present_else_append
+from citrine_converters.old.tools import replace_if_present_else_append
 
 
 def __can_convert(line, sep=','):

@@ -6,13 +6,11 @@ HERE=os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(HERE, '..'))
 
 import pytest
-import numpy as np
-import pandas as pd
 import matplotlib as mpl
 mpl.use('Agg')
 from matplotlib import pyplot as plt
 from pypif import pif
-from citrine_converters.visual import plot_stress_strain_from_pif as ssplot
+from citrine_converters.old.visual import plot_stress_strain_from_pif as ssplot
 
 
 @pytest.fixture

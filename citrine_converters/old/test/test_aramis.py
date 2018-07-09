@@ -6,7 +6,7 @@ sys.path.append(os.path.join(HERE, '..'))
 
 import pytest
 from pypif import pif
-from citrine_converters.aramis import converter
+from citrine_converters.old.aramis import converter
 
 
 EYSTRAIN="{}/data/aramis-ey_strain.csv".format(HERE)

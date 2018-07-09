@@ -51,7 +51,10 @@ def converter(files=[], **keywds):
     ======
     PIF object.
     """
+    result = pif.System(keywds.get('parent', pif.System()).as_dictionary())
     # TODO write out the function calls necessary to process these data.
+    process_files(files)
+    process_keywords(keywds)
     # Don't worry about the details, yet; these are placeholders.
     # TODO Determine whether *files* is .zip, .tgz, .pif, or .json
 
@@ -61,3 +64,19 @@ def converter(files=[], **keywds):
     # TODO Analyze stress-strain curve
 
     # TODO return *PIF*
+
+
+def process_files(filenames, dst=None):
+    """
+    Accepts the filenames or file objects that contain the PIF-formatted
+    stress and strain data. The results are integrated into *dst*, which
+    is a `pif.System` object or None, in which case, a new System object
+    is created.
+
+    If multiple filenames are provided, then neither can have both stress
+    and strain data.
+
+    :param filenames:
+    :return:
+    """
+    pass

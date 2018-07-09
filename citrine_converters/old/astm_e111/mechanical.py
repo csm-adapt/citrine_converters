@@ -1,13 +1,9 @@
 from __future__ import division
 
 import numpy as np
-import warnings
-from itertools import groupby
-from scipy.signal import medfilt as median_filter
 from scipy.ndimage import gaussian_filter
 from scipy.stats import linregress
-from scipy.ndimage.morphology import binary_dilation, binary_erosion
-from ..tools import (
+from citrine_converters.old.tools import (
     linear_merge,
     Normalized,
     resample,

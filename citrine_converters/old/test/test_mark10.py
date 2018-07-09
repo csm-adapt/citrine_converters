@@ -6,7 +6,7 @@ sys.path.append(os.path.join(HERE, '..'))
 
 import pytest
 from pypif import pif
-from citrine_converters.mark10 import converter
+from citrine_converters.old.mark10 import converter
 
 
 SOURCE="{}/data/mark10-output.csv".format(HERE)
