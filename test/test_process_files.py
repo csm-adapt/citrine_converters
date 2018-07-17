@@ -32,7 +32,7 @@ def generate_two_files(input_filenames):
             )
         )]
     with open(fname['stress'], 'w') as ofs:
-        pif.dump(expected[0], ofs)
+        pif.dump(expected[0], ofs)#creates a pif object
     with open(fname['strain'], 'w') as ofs:
         pif.dump(expected[1], ofs)
     return {
@@ -42,9 +42,6 @@ def generate_two_files(input_filenames):
             'strain': expected[1]
         }
     }
-#testing for git
-
-#test again
 
 def test_process_two_filenames(generate_two_files):
     # create local variables and run fixtures
@@ -65,6 +62,24 @@ def test_process_two_filenames(generate_two_files):
            len(expected['strain'].properties) + \
            len(expected['stress'].properties), \
         'The length of the result and expected properties lists do not match.'
+    assert results.ids is None, \
+        'Result ids should be None, but it is {}.'.format(results.ids)
+    assert results.source is None, \
+        'Result source should be None, but it is {}.'.format(results.source)
+    assert results.quantity is None, \
+        'Result quantity should be None, but it is {}.'.format(results.quantity)
+    assert results.preparation is None,\
+        'Result preparation should be None, but it is {}.'.format(results.preparation)
+    assert results.subSystems is None,\
+        'Results subSystem should be None, but it is {}.'.format(results.subSystems)
+    assert results.references is None,\
+        'Results references should be None, but it is {}.'.format(results.references)
+    assert results.contacts is None, \
+        'Results contacts should be None, but it is {}.'.format(results.contacts)
+    assert results.licenses is None,\
+        'Results licenses should be None, but it is {}.'.format(results.licenses)
+    assert results.tags is None,\
+        'Results tags should be None, but it is {}.'.format(results.tags)
 
 
 def test_process_single_file(single_file, generate_simple):
