@@ -4,6 +4,8 @@ from pypif import pif
 from citrine_converters.mechanical.converter import process_files
 
 
+
+#what is pytest do
 @pytest.fixture
 def generate_two_files(input_filenames):
     fname = {'stress': 'resources/simple_stress.json',
