@@ -1,0 +1,4 @@
+{
+  "test/test_process_files.py::test_process_single_file": true, 
+  "test/test_process_files.py::test_process_two_filenames": true
+}

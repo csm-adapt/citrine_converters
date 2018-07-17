@@ -79,4 +79,6 @@ def process_files(filenames, dst=None):
     :param filenames:
     :return:
     """
-    pass
+    data = json.loads('resources/simple_data')
+    stress = data['stress']
+    strain = data['strain']

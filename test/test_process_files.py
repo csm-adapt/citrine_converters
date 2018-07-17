@@ -1,19 +1,51 @@
 import pytest
 import numpy as np
 from pypif import pif
+import json
 from citrine_converters.mechanical.converter import process_files
 
 
-
-#what is pytest do
+#note strain has been changed to be 0-100 for simplicity sakes
 @pytest.fixture
-def generate_two_files(input_filenames):
-    fname = {'stress': 'resources/simple_stress.json',
-            'strain': 'resources/simple_strain.json'}
+def single_file():
+    fname = {'stress': 'resources/expected_simple_stress_1.json',
+             'strain': 'resource/expected_simple_stress_1.json'}
     expected = [
         pif.System(
             properties=
                 pif.Property(
+                    name = 'stress',
+                    scalars= list(np.linspace(0,100)),
+                    conditions=pif.Value(
+                        name='time',
+                        scalars=list(np.linspace(0,100))
+                    )
+                )
+        ),
+        pif.System(
+            pif.Property(
+                name= 'strain',
+                scalars = list(np.linspace(0,100)),
+                conditions=pif.Value(
+                    name='time',
+                    scalars=list(np.linspace(0,100))
+                )
+
+
+            )
+        )
+    ]
+
+
+@pytest.fixture
+def generate_two_files():
+    fname = {'stress': 'resources/expected_simple_stress.json',
+            'strain': 'resources/expected_simple_strain.json'}
+    expected = [
+        pif.System(
+            properties=
+                pif.Property(
+                    #uid=None,
                     name='stress',
                     scalars=list(np.linspace(0, 100)),
                     conditions=pif.Value(
@@ -25,14 +57,15 @@ def generate_two_files(input_filenames):
         pif.System(
             pif.Property(
                 name='strain',
-                scalars=list(np.linspace(0, 1)),
-                conditions={
-                    'name': 'time',
-                    'scalars': list(np.linspace(0, 100))}
+                scalars=list(np.linspace(0, 100)),
+                conditions=pif.Value(
+                    name='time',
+                    scalars=list(np.linspace(0, 100))
+                )
             )
         )]
     with open(fname['stress'], 'w') as ofs:
-        pif.dump(expected[0], ofs)#creates a pif object
+        pif.dump(expected[0], ofs)#write the pif to the file in the resources folder
     with open(fname['strain'], 'w') as ofs:
         pif.dump(expected[1], ofs)
     return {
