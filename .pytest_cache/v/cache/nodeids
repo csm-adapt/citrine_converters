@@ -1,4 +1,5 @@
 [
-  "test/test_process_files.py::test_process_two_filenames", 
-  "test/test_process_files.py::test_process_single_file"
+  "test/test_process_files.py::test_stress_strain_time_in", 
+  "test/test_process_files.py::test_process_single_file", 
+  "test/test_process_files.py::test_process_two_filenames"
 ]
