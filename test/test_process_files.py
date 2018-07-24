@@ -1,8 +1,7 @@
 import pytest
 import numpy as np
 from pypif import pif
-import pandas as pd
-import json
+import random as rnd
 from citrine_converters.mechanical.converter import process_files
 
 
@@ -45,7 +44,7 @@ def generate_expected_two_files():
         pif.System(
             properties=[
                 pif.Property(name='stress',
-                             scalars=list(np.linspace(0, 1)),
+                             scalars=list(np.linspace(0, 100)),
                              conditions=pif.Value(
                                 name='time',
                                 scalars=list(np.linspace(0, 100))))]),
@@ -71,72 +70,287 @@ def generate_expected_two_files():
             'strain': expected[1]
         }
     }
-
 @pytest.fixture
-def generate_pif_one_file(file):
-    with open(file, 'r') as data:
-        Data = pif.load(data)
+def generate_no_time_one_file():
+    fname = 'resources/simple_data.json'
+
     stress = np.linspace(0, 100)
     stress_time = np.linspace(0, 100)
     strain = np.linspace(0, 100)
     strain_time = np.linspace(0, 100)
-    results = pif.System(
+    expected = pif.System(
         subSystems=None,
         properties=[
+            pif.Property(name='stress',
+                         scalars=list(stress),
+                         ),
 
-                pif.Property(name='stress',
-                             scalars=list(stress),
-                             conditions=pif.Value(
-                                name='time',
-                                scalars=list(stress_time))),
-                pif.Property(name='strain',
-                             scalars=list(strain),
-                             conditions=pif.Value(
-                                name='time',
-                                scalars=list(strain_time)))
+            pif.Property(name='strain',
+                         scalars=list(strain),
+                         )
                     ])
-    return results
+    with open(fname, 'w') as data:
+        pif.dump(expected, data)
+
+    return {
+        'file_name': fname,
+        'expected': expected
+    }
 
 @pytest.fixture
-def generate_pif_two_files(file1, file2):
-    with open(file1,'r') as stress_data:
-        stress_d = pif.load(stress_data)
-    with open(file2, 'r') as strain_data:
-        strain_d = pif.load(strain_data)
+def generate_no_time_two_files():
+    fname = {'stress': 'resources/simple_stress.json',
+             'strain': 'resources/simple_strain.json'}
+    expected = [  # makes an array of two pif systems
+        pif.System(
+            properties=[
+                pif.Property(name='stress',
+                             scalars=list(np.linspace(0, 100))
+                             )]),
 
-# currently the pifs are generated from linspace but I am trying to
-    #  figure out how to generate them from a pif formatted json(I would know how to do it if not pif formatted
-    # json.load then stress= loadedfile['stress']
+        pif.System(
+            properties=[
+                pif.Property(name='strain',
+                             scalars=list(np.linspace(0, 1))
+                             )])
+    ]
+    # dump the pifs into two seperate files
+    with open(fname['stress'], 'w') as stress_file:
+        pif.dump(expected[0], stress_file)
+    with open(fname['strain'], 'w') as strain_file:
+        pif.dump(expected[1], strain_file)
+
+    return {
+        'file_names': fname,
+        'expected': {
+            'stress': expected[0],
+            'strain': expected[1]
+        }
+    }
+
+@pytest.fixture
+def generate_no_stress_one_file():
+    fname = 'resources/simple_data.json'
+
+    strain = np.linspace(0, 100)
+    strain_time = np.linspace(0, 100)
+    expected = pif.System(
+        subSystems=None,
+        properties=[
+            pif.Property(name='strain',
+                         scalars=list(strain),
+                         conditions=pif.Value(
+                            name='time',
+                            scalars=list(strain_time)))
+                    ])
+    with open(fname, 'w') as data:
+        pif.dump(expected, data)
+
+    return {
+        'file_name': fname,
+        'expected': expected
+    }
+
+@pytest.fixture
+def generate_no_strain_one_file():
+    fname = 'resources/simple_data.json'
+
+    stress = np.linspace(0, 100)
+    stress_time = np.linspace(0, 100)
+    expected = pif.System(
+        subSystems=None,
+        properties=[
+            pif.Property(name='stress',
+                         scalars=list(stress),
+                         conditions=pif.Value(
+                            name='time',
+                            scalars=list(stress_time))),
+                    ])
+    with open(fname, 'w') as data:
+        pif.dump(expected, data)
+
+    return {
+        'file_name': fname,
+        'expected': expected
+    }
+
+@pytest.fixture
+def generate_differ_times_one_file():
+    fname = 'resources/simple_data.json'
+
+    stress = np.linspace(0, 100)
+    stress_time = np.linspace(0, rnd.randint(1, 100))
+    strain = np.linspace(0, 100)
+    strain_time = np.linspace(0, rnd.randint(1, 100)) # generates a random time interval
+    expected = pif.System(
+        subSystems=None,
+        properties=[
+            pif.Property(name='stress',
+                         scalars=list(stress),
+                         conditions=pif.Value(
+                            name='time',
+                            scalars=list(stress_time))),
+
+            pif.Property(name='strain',
+                         scalars=list(strain),
+                         conditions=pif.Value(
+                            name='time',
+                            scalars=list(strain_time)))
+                    ])
+    with open(fname, 'w') as data:
+        pif.dump(expected, data)
+
+    return {
+        'file_name': fname,
+        'expected': expected
+    }
+@pytest.fixture
+def generate_differ_times_two_files():
+    fname = {'stress': 'resources/simple_stress.json',
+             'strain': 'resources/simple_strain.json'}
+    expected = [  # makes an array of two pif systems
+        pif.System(
+            properties=[
+                pif.Property(name='stress',
+                             scalars=list(np.linspace(0, 100)),
+                             conditions=pif.Value(
+                                name='time',
+                                scalars=list(np.linspace(0, rnd.randint(1, 100)))))]),
+
+        pif.System(
+            properties=[
+                pif.Property(name='strain',
+                             scalars=list(np.linspace(0, 1)),
+                             conditions=pif.Value(
+                                name='time',
+                                scalars=list(np.linspace(0, rnd.randint(1, 100)))))])
+        ]
+    # dump the pifs into two seperate files
+    with open(fname['stress'], 'w') as stress_file:
+        pif.dump(expected[0], stress_file)
+    with open(fname['strain'], 'w') as strain_file:
+        pif.dump(expected[1], strain_file)
+
+    return {
+        'file_names': fname,
+        'expected': {
+            'stress': expected[0],
+            'strain': expected[1]
+        }
+    }
+@pytest.fixture
+def generate_swapped_stress_strain_one_file():
+    fname = 'resources/simple_data.json'
+
     stress = np.linspace(0, 100)
     stress_time = np.linspace(0, 100)
     strain = np.linspace(0, 100)
     strain_time = np.linspace(0, 100)
-    results = pif.System(
+    expected = pif.System(
         subSystems=None,
         properties=[
+            pif.Property(name='strain',
+                         scalars=list(strain),
+                         conditions=pif.Value(
+                             name='time',
+                             scalars=list(strain_time))),
+            pif.Property(name='stress',
+                         scalars=list(stress),
+                         conditions=pif.Value(
+                            name='time',
+                            scalars=list(stress_time)))
 
-                pif.Property(name='stress',
-                             scalars=list(stress),
-                             conditions=pif.Value(
-                                name='time',
-                                scalars=list(stress_time))),
-                pif.Property(name='strain',
-                             scalars=list(strain),
-                             conditions=pif.Value(
-                                name='time',
-                                scalars=list(strain_time)))
                     ])
-    return results
+    with open(fname, 'w') as data:
+        pif.dump(expected, data)
+
+    return {
+        'file_name': fname,
+        'expected': expected
+    }
+
+@pytest.fixture
+def generate_swapped_stress_strain_two_files(strain, stress):
+    return process_files(strain, stress)
+
+@pytest.fixture
+def generate_expected_pd_one_file():
+    pass
+
+@pytest.fixture
+def generate_expected_pd_two_files():
+    pass
+
+def test_differ_times():
+    pass
+# @pytest.fixture
+# def generate_pif_one_file(file):
+#     with open(file, 'r') as data:
+#         sdata = pif.load(data)
+#     stress = sdata.properties[0].scalars
+#     stress_time = sdata.properties[0].con
+# ditions.scalars
+#     strain = sdata.properties[1].scalars
+#     strain_time = sdata.properties[1].conditions.scalars
+#     results = pif.System(
+#         subSystems=None,
+#         properties=[
+#
+#                 pif.Property(name='stress',
+#                              scalars=list(stress),
+#                              conditions=pif.Value(
+#                                 name='time',
+#                                 scalars=list(stress_time))),
+#                 pif.Property(name='strain',
+#                              scalars=list(strain),
+#                              conditions=pif.Value(
+#                                 name='time',
+#                                 scalars=list(strain_time)))
+#                     ])
+#     return results
+#     with open(file1,'r') as stress_data:
+#         stress_d = pif.load(stress_data)
+#     with open(file2, 'r') as strain_data:
+#         strain_d = pif.load(strain_data)
+#     stress = stress_d.properties[0].scalars
+#     stress_time = stress_d.properties[0].conditions.scalars
+#     strain = strain_d.properties[0].scalars
+#     strain_time = strain_d.properties[0].conditions.scalars
+#     results = pif.System(
+#         subSystems=None,
+#         properties=[
+#
+#                 pif.Property(name='stress',
+#                              scalars=list(stress),
+#                              conditions=pif.Value(
+#                                 name='time',
+#                                 scalars=list(stress_time))),
+#                 pif.Property(name='strain',
+#                              scalars=list(strain),
+#                              conditions=pif.Value(
+#                                 name='time',
+#                                 scalars=list(strain_time)))
+#                     ])
+#     return results
 def test_stress_strain_time_in():
     # This test it to check whether the function picks up the lack of one of these in its files
     pass
 
+def test_stress_strain_flipped():
+    # This test is to make sure the function catches it if the stress, strain files are swapped
+    pass
+
 def test_process_single_file(generate_expected_one_file):
+
     einfo = generate_expected_one_file
     expected = einfo['expected']
     fname = einfo['file_name']
-    results = generate_pif_one_file(fname)
+    results = process_files(fname)
     # compare the pifs
+    assert results.properties[0].scalars == expected.properties[0].scalars, \
+        'Result and expected pifs differ in stress values'
+    assert results.properties[1].scalars == expected.properties[1].scalars, \
+        'Result and expected pifs differ in strain values'
     assert results.uid is None, \
         'Result UID should be None'
     assert results.names is None, \
@@ -167,11 +381,16 @@ def test_process_single_file(generate_expected_one_file):
 
 def test_process_two_filenames(generate_expected_two_files):
     # create local variables and run fixtures
+
     einfo = generate_expected_two_files
     expected = einfo['expected']
     fname = einfo['file_names']
-    results = generate_pif_two_files(fname['stress'], fname['strain'])
+    results = process_files([fname['stress'], fname['strain']])
     # compare the pifs
+    assert results.properties[0].scalars == expected['stress'].properties[0].scalars, \
+        'Results and expected pifs differ in stress values'
+    assert results.properties[1].scalars == expected['strain'].properties[0].scalars, \
+        'Results snd expected pifs differ in strain values'
     assert results.uid is None, \
         'Result UID should be None'
     assert results.names is None, \

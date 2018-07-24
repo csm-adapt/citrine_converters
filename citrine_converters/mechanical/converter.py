@@ -1,3 +1,7 @@
+import numpy as np
+from pypif import pif
+import pandas as pd
+
 def converter(files=[], **keywds):
     """
     Summary
@@ -66,8 +70,9 @@ def converter(files=[], **keywds):
     # TODO return *PIF*
 
 
-def process_files(filenames, dst=None):
+def process_files(filenames):
     """
+    Accepts an string list of file names
     Accepts the filenames or file objects that contain the PIF-formatted
     stress and strain data. The results are integrated into *dst*, which
     is a `pif.System` object or None, in which case, a new System object
@@ -79,6 +84,55 @@ def process_files(filenames, dst=None):
     :param filenames:
     :return:
     """
-    data = json.loads('resources/simple_data')
-    stress = data['stress']
-    strain = data['strain']
+# check if one or two files
+    if len(filenames) == 1:
+        with open(filenames[0], 'r') as data:
+            sdata = pif.load(data)
+        stress = sdata.properties[0].scalars
+        stress_time = sdata.properties[0].conditions.scalars
+        strain = sdata.properties[1].scalars
+        strain_time = sdata.properties[1].conditions.scalars
+        results = pif.System(
+            subSystems=None,
+            properties=[
+                pif.Property(name='stress',
+                             scalars=list(stress),
+                             conditions=pif.Value(
+                                 name='time',
+                                 scalars=list(stress_time))),
+                pif.Property(name='strain',
+                             scalars=list(strain),
+                             conditions=pif.Value(
+                                 name='time',
+                                 scalars=list(strain_time)))
+            ])
+        print(type(results))
+        return results
+
+    if len(filenames) == 2:
+        with open(filenames[0], 'r') as stress_data:
+            stress_d = pif.load(stress_data)
+        with open(filenames[1], 'r') as strain_data:
+            strain_d = pif.load(strain_data)
+        stress = stress_d.properties[0].scalars
+        stress_time = stress_d.properties[0].conditions.scalars
+        strain = strain_d.properties[0].scalars
+        strain_time = strain_d.properties[0].conditions.scalars
+        results = pif.System(
+            subSystems=None,
+            properties=[
+                pif.Property(name='stress',
+                             scalars=list(stress),
+                             conditions=pif.Value(
+                                 name='time',
+                                 scalars=list(stress_time))),
+                pif.Property(name='strain',
+                             scalars=list(strain),
+                             conditions=pif.Value(
+                                 name='time',
+                                 scalars=list(strain_time)))
+            ])
+        return results
+    else:
+        assert False, \
+            'Something is wrong with the input if statements failed'
