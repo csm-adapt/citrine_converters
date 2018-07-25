@@ -134,7 +134,7 @@ def generate_no_time_two_files():
 @pytest.fixture
 def generate_no_stress_one_file():
     """Generates a file with no stress"""
-    fname = 'resources/simple_data.json'
+    fname = 'resources/simple_data_no_stress.json'
 
     strain = np.linspace(0, 100)
     strain_time = np.linspace(0, 100)
@@ -352,17 +352,31 @@ def test_differ_times():
 #                                 scalars=list(strain_time)))
 #                     ])
 #     return results
-def test_stress_strain_time_in(generate_no_time_one_file):
+"""Below test passes as expected"""
+def test_time_not_in(generate_no_time_one_file):
     # This test it to check whether the function picks up the lack of one of these in its files
-    fname = 'resources/simple_data_no_time.json'
-    try:
+    fname = generate_no_time_one_file
+    with pytest.raises(Exception):
         process_files([fname])
-    except AssertionError:
-        assert False, 'Function did not catch time'
+
+"""This test does not perform as expected"""
+def test_stress_not_in(generate_no_stress_one_file):
+    fname = generate_no_stress_one_file
+    with pytest.raises(Exception) as f:
+        process_files([fname])
 
 def test_stress_strain_flipped():
     # This test is to make sure the function catches it if the stress, strain files are swapped
     pass
+
+"""The below lines are for testing why the function is returnning a type None to the test"""
+result = process_files(['resources/simple_data.json'])
+print('Type returned from function:')
+print(type(result))
+"""
+The above code does work when I pass the 'no time' json data to it, it raises an assertion error.
+When I pass the time inlcuded data to it, everything works and it prints out the type two times
+"""
 
 def test_process_single_file(generate_expected_one_file):
     einfo = generate_expected_one_file
@@ -370,9 +384,13 @@ def test_process_single_file(generate_expected_one_file):
     fname = einfo['file_name']
     results = process_files([fname])
     # compare the pifs
-    assert results.properties[0].scalars == expected.properties[0].scalars, \
+    A = results.properties[0].scalars
+    B = expected.properties[0].scalars
+    C = results.properties[1].scalars
+    D = expected.properties[1].scalars
+    assert np.array_equal(A, B), \
         'Result and expected pifs differ in stress values'
-    assert results.properties[1].scalars == expected.properties[1].scalars, \
+    assert np.array_equal(C, D), \
         'Result and expected pifs differ in strain values'
     assert results.uid is None, \
         'Result UID should be None'
@@ -409,9 +427,13 @@ def test_process_two_filenames(generate_expected_two_files):
     fname = einfo['file_names']
     results = process_files([fname['stress'], fname['strain']])
     # compare the pifs
-    assert results.properties[0].scalars == expected['stress'].properties[0].scalars, \
+    A = results.properties[0].scalars
+    B = expected['stress'].properties[0].scalars
+    C = results.properties[1].scalars
+    D = expected['strain'].properties[0].scalars
+    assert np.array_equal(A, B), \
         'Results and expected pifs differ in stress values'
-    assert results.properties[1].scalars == expected['strain'].properties[0].scalars, \
+    assert np.array_equal(C, D), \
         'Results snd expected pifs differ in strain values'
     assert results.uid is None, \
         'Result UID should be None'

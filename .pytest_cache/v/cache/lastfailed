@@ -1,4 +1,3 @@
 {
-  "test/test_process_files.py::test_check_pif_values": true, 
-  "test/test_process_files.py::test_process_single_file": true
+  "test/test_process_files.py::test_check_pif_values": true
 }
