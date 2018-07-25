@@ -5,8 +5,10 @@ import random as rnd
 from citrine_converters.mechanical.converter import process_files
 
 
+
 @pytest.fixture
 def generate_expected_one_file():
+    """Generates the expected pif into one file"""
     fname = 'resources/simple_data.json'
 
     stress = np.linspace(0, 100)
@@ -38,6 +40,7 @@ def generate_expected_one_file():
 
 @pytest.fixture
 def generate_expected_two_files():
+    """Generates expected pif into two files"""
     fname = {'stress': 'resources/simple_stress.json',
              'strain': 'resources/simple_strain.json'}
     expected = [  # makes an array of two pif systems
@@ -72,17 +75,19 @@ def generate_expected_two_files():
     }
 @pytest.fixture
 def generate_no_time_one_file():
-    fname = 'resources/simple_data.json'
+    """Generates a file with no time included"""
+    fname = 'resources/simple_data_no_time.json'
 
     stress = np.linspace(0, 100)
-    stress_time = np.linspace(0, 100)
     strain = np.linspace(0, 100)
-    strain_time = np.linspace(0, 100)
     expected = pif.System(
         subSystems=None,
         properties=[
             pif.Property(name='stress',
                          scalars=list(stress),
+                         conditions=pif.Value(
+                             name=None
+                         )
                          ),
 
             pif.Property(name='strain',
@@ -92,13 +97,11 @@ def generate_no_time_one_file():
     with open(fname, 'w') as data:
         pif.dump(expected, data)
 
-    return {
-        'file_name': fname,
-        'expected': expected
-    }
+    return fname # only needs to return the file name since we wont calculate pifs with no time
 
 @pytest.fixture
 def generate_no_time_two_files():
+    """Generates two files with no time included"""
     fname = {'stress': 'resources/simple_stress.json',
              'strain': 'resources/simple_strain.json'}
     expected = [  # makes an array of two pif systems
@@ -130,6 +133,7 @@ def generate_no_time_two_files():
 
 @pytest.fixture
 def generate_no_stress_one_file():
+    """Generates a file with no stress"""
     fname = 'resources/simple_data.json'
 
     strain = np.linspace(0, 100)
@@ -153,6 +157,7 @@ def generate_no_stress_one_file():
 
 @pytest.fixture
 def generate_no_strain_one_file():
+    """Generates a file with no strain"""
     fname = 'resources/simple_data.json'
 
     stress = np.linspace(0, 100)
@@ -176,6 +181,7 @@ def generate_no_strain_one_file():
 
 @pytest.fixture
 def generate_differ_times_one_file():
+    """Generates a file with differing time ending points"""
     fname = 'resources/simple_data.json'
 
     stress = np.linspace(0, 100)
@@ -206,6 +212,7 @@ def generate_differ_times_one_file():
     }
 @pytest.fixture
 def generate_differ_times_two_files():
+    """Generates differing ending times to see if the function catches it"""
     fname = {'stress': 'resources/simple_stress.json',
              'strain': 'resources/simple_strain.json'}
     expected = [  # makes an array of two pif systems
@@ -240,7 +247,8 @@ def generate_differ_times_two_files():
     }
 @pytest.fixture
 def generate_swapped_stress_strain_one_file():
-    fname = 'resources/simple_data.json'
+    """Swaps the stress and strain info in one file"""
+    fname = 'resources/simple_swapped_data.json'
 
     stress = np.linspace(0, 100)
     stress_time = np.linspace(0, 100)
@@ -271,18 +279,30 @@ def generate_swapped_stress_strain_one_file():
 
 @pytest.fixture
 def generate_swapped_stress_strain_two_files(strain, stress):
+    """Swaps the file inputs"""
     return process_files(strain, stress)
 
 @pytest.fixture
 def generate_expected_pd_one_file():
+    """Generates proper pd from expected pif"""
     pass
 
 @pytest.fixture
 def generate_expected_pd_two_files():
+    """Generates proper pd from expected pif"""
+    pass
+
+
+@pytest.fixture
+def generate_two_files_both_stress_strain():
+    """Generates two files that have both stress and strain in each file"""
     pass
 
 def test_differ_times():
+    """Tests to see if function catches differing end time"""
     pass
+
+"""Old fixture I used to generate the expected pif"""
 # @pytest.fixture
 # def generate_pif_one_file(file):
 #     with open(file, 'r') as data:
@@ -332,20 +352,23 @@ def test_differ_times():
 #                                 scalars=list(strain_time)))
 #                     ])
 #     return results
-def test_stress_strain_time_in():
+def test_stress_strain_time_in(generate_no_time_one_file):
     # This test it to check whether the function picks up the lack of one of these in its files
-    pass
+    fname = 'resources/simple_data_no_time.json'
+    try:
+        process_files([fname])
+    except AssertionError:
+        assert False, 'Function did not catch time'
 
 def test_stress_strain_flipped():
     # This test is to make sure the function catches it if the stress, strain files are swapped
     pass
 
 def test_process_single_file(generate_expected_one_file):
-
     einfo = generate_expected_one_file
     expected = einfo['expected']
     fname = einfo['file_name']
-    results = process_files(fname)
+    results = process_files([fname])
     # compare the pifs
     assert results.properties[0].scalars == expected.properties[0].scalars, \
         'Result and expected pifs differ in stress values'
@@ -381,7 +404,6 @@ def test_process_single_file(generate_expected_one_file):
 
 def test_process_two_filenames(generate_expected_two_files):
     # create local variables and run fixtures
-
     einfo = generate_expected_two_files
     expected = einfo['expected']
     fname = einfo['file_names']
@@ -419,16 +441,5 @@ def test_process_two_filenames(generate_expected_two_files):
         'Results licenses should be None'
     assert results.tags is None,\
         'Results tags should be None'
-    #TODO add check to make sure time is in it
 
-
-
-
-# def test_check_pif_values(generate_expected, generate_simple_two_files):
-#     expected = generate_expected
-#     results = generate_simple_two_files
-#     assert results.properties[0] == expected.properties[0], \
-#         'The expected pif and result pif differ in stress values'
-#     assert results.properties[1] == expected.properties[1], \
-#         'The expected pif and result pif differ in strain values'
 

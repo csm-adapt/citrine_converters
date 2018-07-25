@@ -72,7 +72,9 @@ def converter(files=[], **keywds):
 
 def process_files(filenames):
     """
-    Accepts an string list of file names
+    Accepts a list of strings of file names the files should be pif
+    formatted json files
+
     Accepts the filenames or file objects that contain the PIF-formatted
     stress and strain data. The results are integrated into *dst*, which
     is a `pif.System` object or None, in which case, a new System object
@@ -88,11 +90,13 @@ def process_files(filenames):
     if len(filenames) == 1:
         with open(filenames[0], 'r') as data:
             sdata = pif.load(data)
+        assert 'time' in [sdata.properties[0].conditions.name], \
+            'Time is not found'
         stress = sdata.properties[0].scalars
         stress_time = sdata.properties[0].conditions.scalars
         strain = sdata.properties[1].scalars
         strain_time = sdata.properties[1].conditions.scalars
-        results = pif.System(
+        res = pif.System(
             subSystems=None,
             properties=[
                 pif.Property(name='stress',
@@ -106,8 +110,7 @@ def process_files(filenames):
                                  name='time',
                                  scalars=list(strain_time)))
             ])
-        print(type(results))
-        return results
+        return res
 
     if len(filenames) == 2:
         with open(filenames[0], 'r') as stress_data:
@@ -132,7 +135,7 @@ def process_files(filenames):
                                  name='time',
                                  scalars=list(strain_time)))
             ])
-        return results
+        return res
     else:
         assert False, \
             'Something is wrong with the input if statements failed'
