@@ -38,6 +38,8 @@ def generate_expected_one_file():
         'expected': expected
     }
 
+filee = 'resources/simple_data.json'
+
 @pytest.fixture
 def generate_expected_two_files():
     """Generates expected pif into two files"""
@@ -102,8 +104,8 @@ def generate_no_time_one_file():
 @pytest.fixture
 def generate_no_time_two_files():
     """Generates two files with no time included"""
-    fname = {'stress': 'resources/simple_stress.json',
-             'strain': 'resources/simple_strain.json'}
+    fname = {'stress': 'resources/simple_stress_no_time.json',
+             'strain': 'resources/simple_strain_no_time.json'}
     expected = [  # makes an array of two pif systems
         pif.System(
             properties=[
@@ -158,7 +160,7 @@ def generate_no_stress_one_file():
 @pytest.fixture
 def generate_no_strain_one_file():
     """Generates a file with no strain"""
-    fname = 'resources/simple_data.json'
+    fname = 'resources/simple_data_no_strain.json'
 
     stress = np.linspace(0, 100)
     stress_time = np.linspace(0, 100)
@@ -189,7 +191,7 @@ def generate_no_strain_one_file():
 @pytest.fixture
 def generate_differ_times_one_file():
     """Generates a file with differing time ending points"""
-    fname = 'resources/simple_data.json'
+    fname = 'resources/differ_times.json'
 
     stress = np.linspace(0, 100)
     stress_time = np.linspace(0, rnd.randint(1, 100))
@@ -213,15 +215,12 @@ def generate_differ_times_one_file():
     with open(fname, 'w') as data:
         pif.dump(expected, data)
 
-    return {
-        'file_name': fname,
-        'expected': expected
-    }
+    return fname
 @pytest.fixture
 def generate_differ_times_two_files():
     """Generates differing ending times to see if the function catches it"""
-    fname = {'stress': 'resources/simple_stress.json',
-             'strain': 'resources/simple_strain.json'}
+    fname = {'stress': 'resources/simple_stress_differ_times.json',
+             'strain': 'resources/simple_strain_differ_times.json'}
     expected = [  # makes an array of two pif systems
         pif.System(
             properties=[
@@ -305,9 +304,11 @@ def generate_two_files_both_stress_strain():
     """Generates two files that have both stress and strain in each file"""
     pass
 
-def test_differ_times():
-    """Tests to see if function catches differing end time"""
-    pass
+def test_differ_times_one_file(generate_differ_times_one_file):
+    """Tests to see if function catches differing end time should throw an error"""
+    fname = generate_differ_times_one_file
+    with pytest.raises(Exception):
+        process_files([fname])
 
 """Below test passes as expected"""
 def test_time_not_in(generate_no_time_one_file):
@@ -331,24 +332,19 @@ def test_strain_not_in(generate_no_strain_one_file):
         process_files([fname])
     # assert str(f.value) == 'stuff'  "got a coercing to unicode error"
 
-def test_stress_strain_flipped():
-    # This test is to make sure the function catches it if the stress, strain files are swapped
-    pass
 
-"""The below lines are for testing why the function is returnning a type None to the test"""
-# result = process_files(['resources/simple_data.json'])
-# print('Type returned from function:')
-# print(type(result))
-"""
-The above code does work when I pass the 'no time' json data to it, it raises an assertion error.
-When I pass the time inlcuded data to it, everything works and it prints out the type two times
-"""
 
 def test_swapped_stress_strain_one_file(generate_swapped_stress_strain_one_file):
-    info = generate_swapped_stress_strain_one_file
-    expected = info['expected']
-    fname = 'resources/simple_data.json' # info['file_name']
+    einfo = generate_swapped_stress_strain_one_file
+    expected = einfo['expected']
+    fname = einfo['file_name']
     results = process_files([fname])
+# Replaced the commented code below here with a modified copy
+#  of the test_process_single_file code and everything worked???
+    # info = generate_swapped_stress_strain_one_file
+    # expected = info['expected']
+    # fname = 'resources/simple_data.json' # info['file_name']
+    # results = process_files([fname])
     A = results.properties[0].scalars
     B = expected.properties[0].scalars
     C = results.properties[1].scalars
@@ -444,7 +440,13 @@ def test_process_two_filenames(generate_expected_two_files):
     assert results.tags is None,\
         'Results tags should be None'
 
-
-result = process_files(['resources/simple_data.json'])
-
+results = process_files(['resources/simple_data.json'])
+"""The below lines are for testing why the function is returnning a type None to the test"""
+# result = process_files(['resources/simple_data.json'])
+# print('Type returned from function:')
+# print(type(result))
+"""
+The above code does work when I pass the 'no time' json data to it, it raises an assertion error.
+When I pass the time inlcuded data to it, everything works and it prints out the type two times
+"""
 

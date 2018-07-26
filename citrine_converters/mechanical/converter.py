@@ -109,7 +109,6 @@ def process_files(filenames=[]):
             else:
                 assert False, 'No stress data found in {}'.format(filenames[0])
 # ---------------------------------Check for strain in the given file--------------------------------
-
         if 'strain' in [sdata.properties[0].name]:
             assert 'time' in sdata.properties[0].conditions.name, \
                 'Strain is dependent on time but time was not found'
@@ -119,7 +118,7 @@ def process_files(filenames=[]):
             if not szprop:
                 assert False, 'No strain data found in given file'
             # test for swap is atleast getting here
-            if 'strain' in [sdata.properties[1].name]: # this is returning false
+            if ('strain' in [sdata.properties[1].name]): # this is returning false
                 assert 'time' in [sdata.properties[1].conditions.name], \
                     'Strain is dependent on time but time was not found'
                 strain = sdata.properties[1].scalars
@@ -127,6 +126,8 @@ def process_files(filenames=[]):
             else:
                 assert False, 'No strain data found in {}'.format(filenames[0])
 
+        assert stress_time == strain_time, \
+            'Stress and Strain times must be equal'
         res = pif.System(
             subSystems=None,
             properties=[
