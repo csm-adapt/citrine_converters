@@ -2,7 +2,9 @@
   "test/test_process_files.py::test_differ_times", 
   "test/test_process_files.py::test_time_not_in", 
   "test/test_process_files.py::test_stress_not_in", 
+  "test/test_process_files.py::test_strain_not_in", 
   "test/test_process_files.py::test_stress_strain_flipped", 
+  "test/test_process_files.py::test_swapped_stress_strain_one_file", 
   "test/test_process_files.py::test_process_single_file", 
   "test/test_process_files.py::test_process_two_filenames"
 ]

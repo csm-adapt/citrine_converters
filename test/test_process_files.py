@@ -165,6 +165,13 @@ def generate_no_strain_one_file():
     expected = pif.System(
         subSystems=None,
         properties=[
+            pif.Property(name=None,
+                         scalars=list(stress),
+                         conditions=pif.Value(
+                            name='time',
+                            scalars=list(stress_time))),
+
+
             pif.Property(name='stress',
                          scalars=list(stress),
                          conditions=pif.Value(
@@ -302,56 +309,6 @@ def test_differ_times():
     """Tests to see if function catches differing end time"""
     pass
 
-"""Old fixture I used to generate the expected pif"""
-# @pytest.fixture
-# def generate_pif_one_file(file):
-#     with open(file, 'r') as data:
-#         sdata = pif.load(data)
-#     stress = sdata.properties[0].scalars
-#     stress_time = sdata.properties[0].con
-# ditions.scalars
-#     strain = sdata.properties[1].scalars
-#     strain_time = sdata.properties[1].conditions.scalars
-#     results = pif.System(
-#         subSystems=None,
-#         properties=[
-#
-#                 pif.Property(name='stress',
-#                              scalars=list(stress),
-#                              conditions=pif.Value(
-#                                 name='time',
-#                                 scalars=list(stress_time))),
-#                 pif.Property(name='strain',
-#                              scalars=list(strain),
-#                              conditions=pif.Value(
-#                                 name='time',
-#                                 scalars=list(strain_time)))
-#                     ])
-#     return results
-#     with open(file1,'r') as stress_data:
-#         stress_d = pif.load(stress_data)
-#     with open(file2, 'r') as strain_data:
-#         strain_d = pif.load(strain_data)
-#     stress = stress_d.properties[0].scalars
-#     stress_time = stress_d.properties[0].conditions.scalars
-#     strain = strain_d.properties[0].scalars
-#     strain_time = strain_d.properties[0].conditions.scalars
-#     results = pif.System(
-#         subSystems=None,
-#         properties=[
-#
-#                 pif.Property(name='stress',
-#                              scalars=list(stress),
-#                              conditions=pif.Value(
-#                                 name='time',
-#                                 scalars=list(stress_time))),
-#                 pif.Property(name='strain',
-#                              scalars=list(strain),
-#                              conditions=pif.Value(
-#                                 name='time',
-#                                 scalars=list(strain_time)))
-#                     ])
-#     return results
 """Below test passes as expected"""
 def test_time_not_in(generate_no_time_one_file):
     # This test it to check whether the function picks up the lack of one of these in its files
@@ -359,24 +316,47 @@ def test_time_not_in(generate_no_time_one_file):
     with pytest.raises(Exception):
         process_files([fname])
 
-"""This test does not perform as expected"""
+"""This test does not perform as expected(EDIT) after some time this test began to work magically"""
 def test_stress_not_in(generate_no_stress_one_file):
     fname = generate_no_stress_one_file
+    with pytest.raises(Exception):
+        process_files([fname])
+
+
+"""this test should fail when simple data is loaded in because an assertion should not be thrown but it is
+issue does not lie with this test it works"""
+def test_strain_not_in(generate_no_strain_one_file):
+    fname = generate_no_strain_one_file
     with pytest.raises(Exception) as f:
         process_files([fname])
+    # assert str(f.value) == 'stuff'  "got a coercing to unicode error"
 
 def test_stress_strain_flipped():
     # This test is to make sure the function catches it if the stress, strain files are swapped
     pass
 
 """The below lines are for testing why the function is returnning a type None to the test"""
-result = process_files(['resources/simple_data.json'])
-print('Type returned from function:')
-print(type(result))
+# result = process_files(['resources/simple_data.json'])
+# print('Type returned from function:')
+# print(type(result))
 """
 The above code does work when I pass the 'no time' json data to it, it raises an assertion error.
 When I pass the time inlcuded data to it, everything works and it prints out the type two times
 """
+
+def test_swapped_stress_strain_one_file(generate_swapped_stress_strain_one_file):
+    info = generate_swapped_stress_strain_one_file
+    expected = info['expected']
+    fname = 'resources/simple_data.json' # info['file_name']
+    results = process_files([fname])
+    A = results.properties[0].scalars
+    B = expected.properties[0].scalars
+    C = results.properties[1].scalars
+    D = expected.properties[1].scalars
+    assert np.array_equal(A, B), \
+        'Result and expected pifs differ in stress values'
+    assert np.array_equal(C, D), \
+        'Result and expected pifs differ in strain values'
 
 def test_process_single_file(generate_expected_one_file):
     einfo = generate_expected_one_file
@@ -463,5 +443,8 @@ def test_process_two_filenames(generate_expected_two_files):
         'Results licenses should be None'
     assert results.tags is None,\
         'Results tags should be None'
+
+
+result = process_files(['resources/simple_data.json'])
 
 

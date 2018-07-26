@@ -57,8 +57,8 @@ def converter(files=[], **keywds):
     """
     result = pif.System(keywds.get('parent', pif.System()).as_dictionary())
     # TODO write out the function calls necessary to process these data.
-    process_files(files)
-    process_keywords(keywds)
+    # process_files(files)
+    # process_keywords(keywds)
     # Don't worry about the details, yet; these are placeholders.
     # TODO Determine whether *files* is .zip, .tgz, .pif, or .json
 
@@ -90,14 +90,43 @@ def process_files(filenames=[]):
     if len(filenames) == 1:
         with open(filenames[0], 'r') as data:
             sdata = pif.load(data)
-        assert 'time' in [sdata.properties[0].conditions.name], \
-            'Time is not found'
-        assert 'stress' in [sdata.properties[0].name], \
-            'Stress not found'
-        stress = sdata.properties[0].scalars
-        stress_time = sdata.properties[0].conditions.scalars
-        strain = sdata.properties[1].scalars
-        strain_time = sdata.properties[1].conditions.scalars
+        szprop = len(sdata.properties) == 2 # checks to see the length of properties
+# -----------------------------Check for stress in the given file--------------------------------
+        if 'stress' in [sdata.properties[0].name]:
+            assert 'time' in [sdata.properties[0].conditions.name], \
+                'Stress is dependent on time but time was not found'
+            stress = sdata.properties[0].scalars
+            stress_time = sdata.properties[0].conditions.scalars
+        else:
+            if not szprop:
+                assert False, 'No stress data found in given file'
+
+            if 'stress' in [sdata.properties[1].name]:
+                assert 'time' in [sdata.properties[1].conditions.name], \
+                    'Stress is dependent on time but time was not found'
+                stress = sdata.properties[1].scalars
+                stress_time = sdata.properties[1].conditions.scalars
+            else:
+                assert False, 'No stress data found in {}'.format(filenames[0])
+# ---------------------------------Check for strain in the given file--------------------------------
+
+        if 'strain' in [sdata.properties[0].name]:
+            assert 'time' in sdata.properties[0].conditions.name, \
+                'Strain is dependent on time but time was not found'
+            strain = sdata.properties[0].scalars
+            strain_time = sdata.properties[0].conditions.scalars
+        else:
+            if not szprop:
+                assert False, 'No strain data found in given file'
+            # test for swap is atleast getting here
+            if 'strain' in [sdata.properties[1].name]: # this is returning false
+                assert 'time' in [sdata.properties[1].conditions.name], \
+                    'Strain is dependent on time but time was not found'
+                strain = sdata.properties[1].scalars
+                strain_time = sdata.properties[1].conditions.scalars
+            else:
+                assert False, 'No strain data found in {}'.format(filenames[0])
+
         res = pif.System(
             subSystems=None,
             properties=[
@@ -112,8 +141,6 @@ def process_files(filenames=[]):
                                  name='time',
                                  scalars=list(strain_time)))
             ])
-        print('Type in the function:')
-        print(type(res))
         return res
 
     if len(filenames) == 2:
