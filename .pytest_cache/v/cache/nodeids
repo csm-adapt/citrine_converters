@@ -1,4 +1,5 @@
 [
+  "test/test_process_files.py::test_stress_strain_both_files", 
   "test/test_process_files.py::test_differ_times_one_file", 
   "test/test_process_files.py::test_time_not_in", 
   "test/test_process_files.py::test_stress_not_in", 

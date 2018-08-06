@@ -1,4 +1,10 @@
 import numpy as np
+# from citrine_converters import util
+# import sys
+# print('debug begin:')
+# for p in sys.path:
+#     print(p)
+
 from citrine_converters.util.listops import ensure_array_like
 from citrine_converters.util.listops import replace_if_present_else_append
 from citrine_converters.util.listops import reassignment_error
@@ -98,6 +104,8 @@ def process_files(filenames, dst=None):
     filenames = ensure_array_like(filenames)
     if len(filenames) == 1:
         l, r = (filenames[0]), pif.System()
+        with open(l, 'r') as dataLeft:
+            left = pif.load(dataLeft)
     elif len(filenames) == 2:
         l, r = (filenames[0]), (filenames[1])
         with open(l, 'r') as dataLeft:
@@ -107,7 +115,7 @@ def process_files(filenames, dst=None):
     else:
         raise IOError("One or two filenames must be supplied to process_files")
 
-
+    # make sure dst is a pif.system()
     if type(dst) == pif.System():
         pass
     else:
@@ -115,42 +123,61 @@ def process_files(filenames, dst=None):
             properties=[]
         )
 
-    print(type(dst))
-    print('type of dst^^')
 
     # assign stress and strain to None for checking if they are reassigned
     stress = None
     strain = None
     #TODO add a check to make sure time is included in found data, could do it after stress strain found
-    # check if left contains stress && right contains strain
     try:
+        if len(filenames) == 2:
 
-        if any(p.name == "stress" for p in getattr(left, 'properties', [])) and \
-                any(p.name == "strain" for p in getattr(right, 'properties', [])):
-            if reassignment_error(stress):
-                pass  # checks to make sure stress is not being reassigned
-            if reassignment_error(strain):
-                pass  # checks to make sure strain is not being reassigned
-            stress = left
-            strain = right
+    # check if left contains stress && right contains strain
+            if any(p.name == "stress" for p in getattr(left, 'properties', [])) and \
+                    any(p.name == "strain" for p in getattr(right, 'properties', [])):
+                reassignment_error(stress) # checks to make sure stress is not being reassigned
+                reassignment_error(strain) # checks to make sure strain is not being reassigned
+                stress = left
+                strain = right
 
     # check is right contains stress and left contains strain
-        if any(p.name == "stress" for p in getattr(right, 'properties', [])) and \
-                any(p.name == "strain" for p in getattr(left, 'properties', [])):
-            # ReassingmentError(stress) # checks to make sure stress is not being reassigned
-            # ReassingmentError(strain) # checks to make sure strain is not being reassigned
-            stress = right
-            strain = left
-    # check if stress and strain are in the left file only
+            if any(p.name == "stress" for p in getattr(right, 'properties', [])) and \
+                    any(p.name == "strain" for p in getattr(left, 'properties', [])):
+                reassignment_error(stress) # checks to make sure stress is not being reassigned
+                reassignment_error(strain) # checks to make sure strain is not being reassigned
+                stress = right
+                strain = left
 
+    # check if stress and strain are in the left file only
+        elif len(filenames) == 1:
+            #TODO need a better way to check if stress strain are being reassigned for these ones
+
+            stress = pif.System(properties=[pif.Property()])
+            strain = pif.System(properties=[pif.Property()])
+            if (left.properties[0].name == 'stress' and len(left.properties) == 2):
+
+                stress.properties[0] = left.properties[0]
+                if left.properties[1].name == 'strain':
+                    strain.properties[0] = left.properties[1]
+            elif (left.properties[0].name == 'strain' and len(left.properties) == 2):
+                strain.properties[0] = left.properties[0]
+                if left.properties[1].name == 'stress':
+                    stress.properties[0] = left.properties[1]
+            else:
+                raise IOError("Either stress or strain is not provided in the single input file")
     # check if stress and strain have a time condition
     except IOError:
         raise IOError("Stress and strain can not be defined in two different places")
 
+
     try:
-        if stress.properties[0].conditions.name == 'time' and strain.properties[0].conditions.name == 'time':
+        if stress.properties[0].conditions.name == 'time' and strain.properties[0].conditions.name == 'time' \
+                and stress.properties[0].conditions.scalars == strain.properties[0].conditions.scalars:
             pass
+        else:
+            assert False, "Time is non existent in stress or strain and/or the times do not match \
+            between stress and strain"
     except IndexError:
+
         raise IOError("Stress or strain is missing a time component")
 
 
@@ -164,101 +191,17 @@ def process_files(filenames, dst=None):
     # check if right contains stress, error if left does also
     # check if right contains strain, error if left does also
     # ensure dst.properties exists
-    # dst.properties = getattr(dst, "properties", [])
+    dst.properties = getattr(dst, "properties", [])
     # add stress data to destination
-    print('dst type:')
-    print(type(dst))
-    print('end')
-    replace_if_present_else_append(dst.properties, stress,
-                                   cmp=lambda a, b: a.name == b.name)
+
+    # print(type(dst.properties))
+
+    # I think stress and strain are pif.system object when they should only be property
+
+    replace_if_present_else_append(dst.properties, stress.properties[0],
+                                   cmp=lambda a,b: a.name == b.name)
     # add strain data to destination
-    replace_if_present_else_append((dst.properties, strain),
-                                   cmp=lambda a, b: a.name == b.name)
-    # verify/validate input parameters
+    replace_if_present_else_append(dst.properties, strain.properties[0],
+                                   cmp=lambda a,b: a.name == b.name)
     return dst
-#
-# # check if one or two files
-#     if len(filenames) == 1:
-#         with open(filenames[0], 'r') as data:
-#             sdata = pif.load(data)
-#         szprop = len(sdata.properties) == 2 # checks to see the length of properties
-# # -----------------------------Check for stress in the given file--------------------------------
-#         if 'stress' in [sdata.properties[0].name]:
-#             assert 'time' in [sdata.properties[0].conditions.name], \
-#                 'Stress is dependent on time but time was not found'
-#             stress = sdata.properties[0].scalars
-#             stress_time = sdata.properties[0].conditions.scalars
-#         else:
-#             if not szprop:
-#                 assert False, 'No stress data found in given file'
-#
-#             if 'stress' in [sdata.properties[1].name]:
-#                 assert 'time' in [sdata.properties[1].conditions.name], \
-#                     'Stress is dependent on time but time was not found'
-#                 stress = sdata.properties[1].scalars
-#                 stress_time = sdata.properties[1].conditions.scalars
-#             else:
-#                 assert False, 'No stress data found in {}'.format(filenames[0])
-# # ---------------------------------Check for strain in the given file--------------------------------
-#         if 'strain' in [sdata.properties[0].name]:
-#             assert 'time' in sdata.properties[0].conditions.name, \
-#                 'Strain is dependent on time but time was not found'
-#             strain = sdata.properties[0].scalars
-#             strain_time = sdata.properties[0].conditions.scalars
-#         else:
-#             if not szprop:
-#                 assert False, 'No strain data found in given file'
-#             # test for swap is atleast getting here
-#             if ('strain' in [sdata.properties[1].name]): # this is returning false
-#                 assert 'time' in [sdata.properties[1].conditions.name], \
-#                     'Strain is dependent on time but time was not found'
-#                 strain = sdata.properties[1].scalars
-#                 strain_time = sdata.properties[1].conditions.scalars
-#             else:
-#                 assert False, 'No strain data found in {}'.format(filenames[0])
-#
-#         assert stress_time == strain_time, \
-#             'Stress and Strain times must be equal'
-#         res = pif.System(
-#             subSystems=None,
-#             properties=[
-#                 pif.Property(name='stress',
-#                              scalars=list(stress),
-#                              conditions=pif.Value(
-#                                  name='time',
-#                                  scalars=list(stress_time))),
-#                 pif.Property(name='strain',
-#                              scalars=list(strain),
-#                              conditions=pif.Value(
-#                                  name='time',
-#                                  scalars=list(strain_time)))
-#             ])
-#         return res
-#
-#     if len(filenames) == 2:
-#         with open(filenames[0], 'r') as stress_data:
-#             stress_d = pif.load(stress_data)
-#         with open(filenames[1], 'r') as strain_data:
-#             strain_d = pif.load(strain_data)
-#         stress = stress_d.properties[0].scalars
-#         stress_time = stress_d.properties[0].conditions.scalars
-#         strain = strain_d.properties[0].scalars
-#         strain_time = strain_d.properties[0].conditions.scalars
-#         res = pif.System(
-#             subSystems=None,
-#             properties=[
-#                 pif.Property(name='stress',
-#                              scalars=list(stress),
-#                              conditions=pif.Value(
-#                                  name='time',
-#                                  scalars=list(stress_time))),
-#                 pif.Property(name='strain',
-#                              scalars=list(strain),
-#                              conditions=pif.Value(
-#                                  name='time',
-#                                  scalars=list(strain_time)))
-#             ])
-#         return res
-#     else:
-#         assert False, \
-#             'Something is wrong with the input if statements failed'
+

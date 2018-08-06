@@ -1,3 +1,4 @@
+from pypif import pif
 def ensure_array_like(x):
     """
     Ensures that x is an array-like object, or wraps it in
@@ -65,7 +66,7 @@ def replace_if_present_else_append(
                 objlist[i] = obj
             # short circuit to exit the for loop and the function.
             return objlist
-    # if we get here, then the property was not found. Append.
+    # if we get here, then the property was not found. Append. HI
     objlist.append(obj)
     return objlist
 
