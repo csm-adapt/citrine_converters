@@ -152,6 +152,15 @@ def generate_no_stress_one_file():
     with open(fname, 'w') as data:
         pif.dump(expected, data)
 
+    # from StringIO import StringIO
+    # sio = StringIO()
+    # pif.dump(expected, sio)
+    #
+    # return {
+    #     'StringIO': sio,
+    #     'expected': expected
+    # }
+
     return {
         'file_name': fname,
         'expected': expected
@@ -377,7 +386,8 @@ def test_process_single_file(generate_expected_one_file):
     assert len(results.properties) == \
         len(expected.properties), \
         'The length of the result and expected properties lists do not match.'
-    assert results.ids is None, \
+    #assert results.ids is None, \
+    assert getattr(results, "ids", None) is None, \
         'Result ids should be None'
     assert results.source is None, \
         'Result source should be None'
@@ -440,11 +450,11 @@ def test_process_two_filenames(generate_expected_two_files):
     assert results.tags is None,\
         'Results tags should be None'
 
-results = process_files(['resources/simple_data.json'])
+# results = process_files(['resources/simple_data.json'])
 """The below lines are for testing why the function is returnning a type None to the test"""
-# result = process_files(['resources/simple_data.json'])
-# print('Type returned from function:')
-# print(type(result))
+result = process_files(['resources/simple_stress.json', 'resources/simple_strain.json'])
+print('Type returned from function:')
+print(type(result))
 """
 The above code does work when I pass the 'no time' json data to it, it raises an assertion error.
 When I pass the time inlcuded data to it, everything works and it prints out the type two times
