@@ -4,8 +4,6 @@ from pypif import pif
 import random as rnd
 from citrine_converters.mechanical.converter import process_files
 
-
-
 @pytest.fixture
 def generate_expected_one_file():
     """Generates the expected pif into one file"""
@@ -75,6 +73,8 @@ def generate_expected_two_files():
             'strain': expected[1]
         }
     }
+files = {'stress': 'resources/simple_stress.json',
+             'strain': 'resources/simple_strain.json'}
 @pytest.fixture
 def generate_no_time_one_file():
     """Generates a file with no time included"""
@@ -176,18 +176,11 @@ def generate_no_strain_one_file():
     expected = pif.System(
         subSystems=None,
         properties=[
-            pif.Property(name=None,
-                         scalars=list(stress),
-                         conditions=pif.Value(
-                            name='time',
-                            scalars=list(stress_time))),
-
-
             pif.Property(name='stress',
                          scalars=list(stress),
                          conditions=pif.Value(
                             name='time',
-                            scalars=list(stress_time))),
+                            scalars=list(stress_time)))
                     ])
     with open(fname, 'w') as data:
         pif.dump(expected, data)
@@ -253,13 +246,7 @@ def generate_differ_times_two_files():
     with open(fname['strain'], 'w') as strain_file:
         pif.dump(expected[1], strain_file)
 
-    return {
-        'file_names': fname,
-        'expected': {
-            'stress': expected[0],
-            'strain': expected[1]
-        }
-    }
+    return fname
 @pytest.fixture
 def generate_swapped_stress_strain_one_file():
     """Swaps the stress and strain info in one file"""
@@ -291,13 +278,6 @@ def generate_swapped_stress_strain_one_file():
         'file_name': fname,
         'expected': expected
     }
-@pytest.fixture
-def generate_one_file_reassing_stress():
-    """This will reassign stress in two places"""
-@pytest.fixture
-def generate_swapped_stress_strain_two_files(strain, stress):
-    """Swaps the file inputs"""
-    return process_files(strain, stress)
 
 
 @pytest.fixture
@@ -341,53 +321,149 @@ def generate_two_files_both_stress_strain():
 
     return fname
 
+
+@pytest.fixture
+def generate_stress_redefined():
+    fname = 'resources/stress_redefined.json'
+
+    stress = np.linspace(0, 100)
+    stress_time = np.linspace(0, 100)
+    strain = np.linspace(0, 100)
+    strain_time = np.linspace(0, 100)
+    expected = pif.System(
+        subSystems=None,
+        properties=[
+            pif.Property(name='stress',
+                         scalars=list(strain),
+                         conditions=pif.Value(
+                             name='time',
+                             scalars=list(strain_time))),
+            pif.Property(name='stress',
+                         scalars=list(stress),
+                         conditions=pif.Value(
+                            name='time',
+                            scalars=list(stress_time)))
+
+                    ])
+    with open(fname, 'w') as data:
+        pif.dump(expected, data)
+
+    return fname
+
+@pytest.fixture
+def generate_strain_redefined():
+    fname = 'resources/strain_redefined.json'
+
+    stress = np.linspace(0, 100)
+    stress_time = np.linspace(0, 100)
+    strain = np.linspace(0, 100)
+    strain_time = np.linspace(0, 100)
+    expected = pif.System(
+        subSystems=None,
+        properties=[
+            pif.Property(name='strain',
+                         scalars=list(strain),
+                         conditions=pif.Value(
+                             name='time',
+                             scalars=list(strain_time))),
+            pif.Property(name='strain',
+                         scalars=list(stress),
+                         conditions=pif.Value(
+                            name='time',
+                            scalars=list(stress_time)))
+
+                    ])
+    with open(fname, 'w') as data:
+        pif.dump(expected, data)
+
+    return fname
+
+
+# ---------------------------Begin Tests---------------------------
+
+# NUM 1
 def test_stress_strain_both_files(generate_two_files_both_stress_strain):
     fname = generate_two_files_both_stress_strain
     with pytest.raises(Exception):
         process_files([fname[0],fname[1]])
 
+# NUM 2
+def test_stress_redefined(generate_stress_redefined):
+    fname = generate_stress_redefined
+    try:
+        process_files([fname])
+        raise Exception, 'The redefined stress data and lack of strain data was not caught'
+    except IOError:
+        pass
 
+# NUM 3
+def test_strain_redefined(generate_strain_redefined):
+    fname = generate_strain_redefined
+    try:
+        process_files([fname])
+        raise Exception, 'The redefined strain data and lack of stress data was not caught'
+    except IOError:
+        pass
+
+# NUM 4
 def test_differ_times_one_file(generate_differ_times_one_file):
     """Tests to see if function catches differing end time should throw an error"""
     fname = generate_differ_times_one_file
     with pytest.raises(Exception):
         process_files([fname])
 
-"""Below test passes as expected"""
+# NUM 5
+def test_differ_times_two_files(generate_differ_times_two_files):
+    fname = generate_differ_times_two_files
+    with pytest.raises(Exception):
+        process_files([fname[0], fname[1]])
+
+# NUM 6
 def test_time_not_in(generate_no_time_one_file):
     # This test it to check whether the function picks up the lack of one of these in its files
     fname = generate_no_time_one_file
     with pytest.raises(Exception):
         process_files([fname])
 
-"""This test does not perform as expected(EDIT) after some time this test began to work magically"""
+# NUM 7
 def test_stress_not_in(generate_no_stress_one_file):
     fname = generate_no_stress_one_file
     with pytest.raises(Exception):
         process_files([fname])
 
 
-"""this test should fail when simple data is loaded in because an assertion should not be thrown but it is
-issue does not lie with this test it works"""
+# NUM 8
 def test_strain_not_in(generate_no_strain_one_file):
     fname = generate_no_strain_one_file
     with pytest.raises(Exception) as f:
         process_files([fname])
-    # assert str(f.value) == 'stuff'  "got a coercing to unicode error"
 
+# NUM 9
+def test_time_not_in_two_files(generate_no_time_two_files):
+    # fname = generate_no_time_two_files
+    fname = files
+    with pytest.raises(Exception):
+        process_files([fname[0], fname[1]])
+# process_files(['resources/simple_stress.json', 'resources/simple_strain.json'])
 
+# NUM 10
+def test_stress_not_in_two_files(generate_no_stress_one_file):
+    fname = generate_no_stress_one_file
+    with pytest.raises(Exception):
+        process_files([fname, fname])
 
+# NUM 11
+def test_strain_not_in_two_files(generate_no_strain_one_file):
+    fname = generate_no_strain_one_file
+    with pytest.raises(Exception):
+        process_files([fname, fname])
+
+# NUM 12
 def test_swapped_stress_strain_one_file(generate_swapped_stress_strain_one_file):
     einfo = generate_swapped_stress_strain_one_file
     expected = einfo['expected']
     fname = einfo['file_name']
     results = process_files([fname])
-# Replaced the commented code below here with a modified copy
-#  of the test_process_single_file code and everything worked???
-    # info = generate_swapped_stress_strain_one_file
-    # expected = info['expected']
-    # fname = 'resources/simple_data.json' # info['file_name']
-    # results = process_files([fname])
     A = results.properties[0].scalars
     B = expected.properties[0].scalars
     C = results.properties[1].scalars
@@ -397,6 +473,52 @@ def test_swapped_stress_strain_one_file(generate_swapped_stress_strain_one_file)
     assert np.array_equal(C, D), \
         'Result and expected pifs differ in strain values'
 
+# NUM 13
+def test_swapped_stress_strain_two_files(generate_expected_two_files):
+    # create local variables and run fixtures
+    einfo = generate_expected_two_files
+    expected = einfo['expected']
+    fname = einfo['file_names']
+    results = process_files([fname['strain'], fname['stress']])
+    # compare the pifs
+    A = results.properties[0].scalars
+    B = expected['stress'].properties[0].scalars
+    C = results.properties[1].scalars
+    D = expected['strain'].properties[0].scalars
+    assert np.array_equal(A, B), \
+        'Results and expected pifs differ in stress values'
+    assert np.array_equal(C, D), \
+        'Results snd expected pifs differ in strain values'
+    assert results.uid is None, \
+        'Result UID should be None'
+    assert results.names is None, \
+        'Result should not be named'
+    assert results.classifications is None, \
+        'Result should not have any classifications.'
+    assert len(results.properties) == \
+        len(expected['stress'].properties) + \
+        len(expected['strain'].properties), \
+        'The length of the result and expected properties lists do not match.'
+    assert results.ids is None, \
+        'Result ids should be None'
+    assert results.source is None, \
+        'Result source should be None'
+    assert results.quantity is None, \
+        'Result quantity should be None'
+    assert results.preparation is None,\
+        'Result preparation should be None'
+    # assert results.subSystems is None,\
+    #     'Results subSystem should be None'
+    assert results.references is None,\
+        'Results references should be None'
+    assert results.contacts is None, \
+        'Results contacts should be None'
+    assert results.licenses is None,\
+        'Results licenses should be None'
+    assert results.tags is None,\
+        'Results tags should be None'
+
+# NUM 14
 def test_process_single_file(generate_expected_one_file):
     einfo = generate_expected_one_file
     expected = einfo['expected']
@@ -440,6 +562,7 @@ def test_process_single_file(generate_expected_one_file):
     assert results.tags is None,\
         'Results tags should be None'
 
+# NUM 15
 def test_process_two_filenames(generate_expected_two_files):
     # create local variables and run fixtures
     einfo = generate_expected_two_files
@@ -484,13 +607,4 @@ def test_process_two_filenames(generate_expected_two_files):
     assert results.tags is None,\
         'Results tags should be None'
 
-# results = process_files(['resources/simple_data.json'])
-"""The below lines are for testing why the function is returnning a type None to the test"""
-result = process_files(['resources/double_stress.json', 'resources/double_strain.json'])
-# print('Type returned from function:')
-# print(type(result))
-"""
-The above code does work when I pass the 'no time' json data to it, it raises an assertion error.
-When I pass the time inlcuded data to it, everything works and it prints out the type two times
-"""
 

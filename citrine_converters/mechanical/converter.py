@@ -149,25 +149,31 @@ def process_files(filenames, dst=None):
 
     # check if stress and strain are in the left file only
         elif len(filenames) == 1:
-            #TODO need a better way to check if stress strain are being reassigned for these ones
-
-            stress = pif.System(properties=[pif.Property()])
-            strain = pif.System(properties=[pif.Property()])
+            #TODO need a better way to check if stress strain are being reassigned for these ones MIGHT BE DONE
             if (left.properties[0].name == 'stress' and len(left.properties) == 2):
-
+                reassignment_error(stress)
+                stress = pif.System(properties=[pif.Property()])
                 stress.properties[0] = left.properties[0]
                 if left.properties[1].name == 'strain':
-                    strain.properties[0] = left.properties[1]
+                    if not reassignment_error(strain):
+                        strain = pif.System(properties=[pif.Property()])
+                        strain.properties[0] = left.properties[1]
             elif (left.properties[0].name == 'strain' and len(left.properties) == 2):
-                strain.properties[0] = left.properties[0]
+                if not reassignment_error(strain):
+                    strain = pif.System(properties=[pif.Property()])
+                    strain.properties[0] = left.properties[0]
                 if left.properties[1].name == 'stress':
-                    stress.properties[0] = left.properties[1]
+                    if not reassignment_error(stress):
+                        stress = pif.System(properties=[pif.Property()])
+                        stress.properties[0] = left.properties[1]
             else:
                 raise IOError("Either stress or strain is not provided in the single input file")
     # check if stress and strain have a time condition
     except IOError:
         raise IOError("Stress and strain can not be defined in two different places")
 
+    if stress == None or strain == None:
+        raise IOError ('Stress or strain data not provided')
 
     try:
         if stress.properties[0].conditions.name == 'time' and strain.properties[0].conditions.name == 'time' \
@@ -180,24 +186,9 @@ def process_files(filenames, dst=None):
 
         raise IOError("Stress or strain is missing a time component")
 
-
-
-
-
-
-
-    # check if left file contains both stress and strain
-    # check if left contains strain
-    # check if right contains stress, error if left does also
-    # check if right contains strain, error if left does also
     # ensure dst.properties exists
     dst.properties = getattr(dst, "properties", [])
     # add stress data to destination
-
-    # print(type(dst.properties))
-
-    # I think stress and strain are pif.system object when they should only be property
-
     replace_if_present_else_append(dst.properties, stress.properties[0],
                                    cmp=lambda a,b: a.name == b.name)
     # add strain data to destination
