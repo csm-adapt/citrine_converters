@@ -3,6 +3,64 @@ import numpy as np
 from pypif import pif
 import random as rnd
 from citrine_converters.mechanical.converter import process_files
+"""
+README
+Format:
+TEST NAME
+-Description
+PASS/FAIL
+**note numbers correspond to order of tests. Tests Start on line 441
+1.	test_stress_strain_both_files
+-The tests generates simple data that has stress and strain defined in one file. The test passes the function two files
+with both stress and strain data contained in each.
+PASS
+2.	test_stress_redefined
+-This test generates one file with stress defined twice and no strain defined.
+PASS
+3.	test_strain_redefined
+-This test generates one file with strain defined twice and no stress defined.
+PASS
+4.	test_differ_times_one_file
+-This test generates one file with differing times
+PASS
+5.	test_differ_times_two_files
+-This test generates two files with differing end times
+PASS
+6.	test_time_not_in
+-This test generates one file with no time at all in it
+PASS
+7.	test_stress_not_in
+-This test generates one file with no stress given
+PASS
+8.	test_strain_not_in
+-This test generates one file with no strain given
+PASS
+9.	test_time_not_in_two_files
+-This test generates two files with no time included 
+PASS
+10.	test_stress_not_in_two_files
+-This test passes two identical files that only contain strain data
+PASS
+11.	test_strain_not_in_two_files
+-This test passes in two identical files that only contain stress data
+PASS
+12.	test_swapped_stress_strain_one_file
+-This test generates one file but with stress and strain swapped in order.
+PASS
+13.	test_swapped_stress_strain_two_files
+-This test swaps the file input
+PASS
+14.	test_process_single_file
+-This tests generates an expected pif, and then compares it to the function generated pif (from one file)
+PASS
+15.	 test_process_two_filenames
+-This test generates an expected pif, and then compares it to the functions generated pif (from two files)
+PASS
+16.	test_bad_number_of_files
+-This test inputs three files and zero files into the function to make sure it throws an assertion error
+PASS
+
+"""
 
 @pytest.fixture
 def generate_expected_one_file():
@@ -383,12 +441,14 @@ def generate_strain_redefined():
 
 # NUM 1
 def test_stress_strain_both_files(generate_two_files_both_stress_strain):
+    """Inputs data with stress/strain defined twice"""
     fname = generate_two_files_both_stress_strain
     with pytest.raises(Exception):
         process_files([fname[0],fname[1]])
 
 # NUM 2
 def test_stress_redefined(generate_stress_redefined):
+    """Inputs one file with stress defined twice and no strain"""
     fname = generate_stress_redefined
     try:
         process_files([fname])
@@ -398,6 +458,7 @@ def test_stress_redefined(generate_stress_redefined):
 
 # NUM 3
 def test_strain_redefined(generate_strain_redefined):
+    """Inputs one file with strain defined twice and no stress"""
     fname = generate_strain_redefined
     try:
         process_files([fname])
@@ -414,6 +475,7 @@ def test_differ_times_one_file(generate_differ_times_one_file):
 
 # NUM 5
 def test_differ_times_two_files(generate_differ_times_two_files):
+    """Inputs two files with differing time data"""
     fname = generate_differ_times_two_files
     with pytest.raises(Exception):
         process_files([fname[0], fname[1]])
@@ -427,6 +489,7 @@ def test_time_not_in(generate_no_time_one_file):
 
 # NUM 7
 def test_stress_not_in(generate_no_stress_one_file):
+    """Input file has no stress"""
     fname = generate_no_stress_one_file
     with pytest.raises(Exception):
         process_files([fname])
@@ -434,32 +497,36 @@ def test_stress_not_in(generate_no_stress_one_file):
 
 # NUM 8
 def test_strain_not_in(generate_no_strain_one_file):
+    """Input file has no strain"""
     fname = generate_no_strain_one_file
     with pytest.raises(Exception) as f:
         process_files([fname])
 
 # NUM 9
 def test_time_not_in_two_files(generate_no_time_two_files):
-    # fname = generate_no_time_two_files
-    fname = files
+    """Two file input with no time data"""
+    fname = generate_no_time_two_files
     with pytest.raises(Exception):
         process_files([fname[0], fname[1]])
-# process_files(['resources/simple_stress.json', 'resources/simple_strain.json'])
-
+        # process_files(['resources/simple_stress.json', 'resources/simple_strain.json'])
+#         above comment is for testing
 # NUM 10
 def test_stress_not_in_two_files(generate_no_stress_one_file):
+    """Two file input with no stress"""
     fname = generate_no_stress_one_file
     with pytest.raises(Exception):
         process_files([fname, fname])
 
 # NUM 11
 def test_strain_not_in_two_files(generate_no_strain_one_file):
+    """Two file input with no strain"""
     fname = generate_no_strain_one_file
     with pytest.raises(Exception):
         process_files([fname, fname])
 
 # NUM 12
 def test_swapped_stress_strain_one_file(generate_swapped_stress_strain_one_file):
+    """Input swapped stress strain into function"""
     einfo = generate_swapped_stress_strain_one_file
     expected = einfo['expected']
     fname = einfo['file_name']
@@ -475,6 +542,7 @@ def test_swapped_stress_strain_one_file(generate_swapped_stress_strain_one_file)
 
 # NUM 13
 def test_swapped_stress_strain_two_files(generate_expected_two_files):
+    """Swaps file input"""
     # create local variables and run fixtures
     einfo = generate_expected_two_files
     expected = einfo['expected']
@@ -520,6 +588,7 @@ def test_swapped_stress_strain_two_files(generate_expected_two_files):
 
 # NUM 14
 def test_process_single_file(generate_expected_one_file):
+    """Tests process_files with one file input"""
     einfo = generate_expected_one_file
     expected = einfo['expected']
     fname = einfo['file_name']
@@ -563,6 +632,7 @@ def test_process_single_file(generate_expected_one_file):
 
 # NUM 15
 def test_process_two_filenames(generate_expected_two_files):
+    """Tests process_files with two file inputs"""
     # create local variables and run fixtures
     einfo = generate_expected_two_files
     expected = einfo['expected']
@@ -607,6 +677,7 @@ def test_process_two_filenames(generate_expected_two_files):
         'Results tags should be None'
 
 def test_bad_number_of_files():
+    """Inputs 3 files and 0 files"""
     with pytest.raises(Exception):
         process_files(['resources/simple_data.json', 'resources/simple_data.json', 'resources/simple_data.json'])
     with pytest.raises(Exception):
