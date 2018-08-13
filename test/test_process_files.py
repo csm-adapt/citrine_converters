@@ -452,7 +452,7 @@ def test_stress_redefined(generate_stress_redefined):
     fname = generate_stress_redefined
     try:
         process_files([fname])
-        raise Exception, 'The redefined stress data and lack of strain data was not caught'
+        raise Exception('The redefined stress data and lack of strain data was not caught')
     except IOError:
         pass
 
@@ -462,7 +462,7 @@ def test_strain_redefined(generate_strain_redefined):
     fname = generate_strain_redefined
     try:
         process_files([fname])
-        raise Exception, 'The redefined strain data and lack of stress data was not caught'
+        raise Exception('The redefined strain data and lack of stress data was not caught')
     except IOError:
         pass
 
