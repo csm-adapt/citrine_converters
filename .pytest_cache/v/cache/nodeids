@@ -13,5 +13,6 @@
   "test/test_process_files.py::test_swapped_stress_strain_one_file", 
   "test/test_process_files.py::test_swapped_stress_strain_two_files", 
   "test/test_process_files.py::test_process_single_file", 
-  "test/test_process_files.py::test_process_two_filenames"
+  "test/test_process_files.py::test_process_two_filenames", 
+  "test/test_process_files.py::test_bad_number_of_files"
 ]

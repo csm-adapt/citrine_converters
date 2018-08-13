@@ -489,33 +489,33 @@ def test_swapped_stress_strain_two_files(generate_expected_two_files):
         'Results and expected pifs differ in stress values'
     assert np.array_equal(C, D), \
         'Results snd expected pifs differ in strain values'
-    assert results.uid is None, \
+    assert getattr( results, 'uid', None) is None, \
         'Result UID should be None'
-    assert results.names is None, \
+    assert getattr(results, 'names', None) is None, \
         'Result should not be named'
-    assert results.classifications is None, \
+    assert getattr(results, 'classifications', None) is None, \
         'Result should not have any classifications.'
     assert len(results.properties) == \
         len(expected['stress'].properties) + \
         len(expected['strain'].properties), \
         'The length of the result and expected properties lists do not match.'
-    assert results.ids is None, \
+    assert getattr(results, "ids", None) is None, \
         'Result ids should be None'
-    assert results.source is None, \
+    assert getattr(results, 'source', None) is None, \
         'Result source should be None'
-    assert results.quantity is None, \
+    assert getattr(results, 'quantity', None) is None, \
         'Result quantity should be None'
-    assert results.preparation is None,\
+    assert getattr(results, 'preparation', None) is None,\
         'Result preparation should be None'
-    # assert results.subSystems is None,\
-    #     'Results subSystem should be None'
-    assert results.references is None,\
+    assert getattr(results, "subSystems", None) is None, \
+        'Results subSystem should be None'
+    assert getattr(results, 'references', None) is None,\
         'Results references should be None'
-    assert results.contacts is None, \
+    assert getattr(results, 'contacts', None) is None, \
         'Results contacts should be None'
-    assert results.licenses is None,\
+    assert getattr(results, 'licenses', None) is None,\
         'Results licenses should be None'
-    assert results.tags is None,\
+    assert getattr(results,'tags', None) is None,\
         'Results tags should be None'
 
 # NUM 14
@@ -533,33 +533,32 @@ def test_process_single_file(generate_expected_one_file):
         'Result and expected pifs differ in stress values'
     assert np.array_equal(C, D), \
         'Result and expected pifs differ in strain values'
-    assert results.uid is None, \
+    assert getattr( results, 'uid', None) is None, \
         'Result UID should be None'
-    assert results.names is None, \
+    assert getattr(results, 'names', None) is None, \
         'Result should not be named'
-    assert results.classifications is None, \
+    assert getattr(results, 'classifications', None) is None, \
         'Result should not have any classifications.'
     assert len(results.properties) == \
         len(expected.properties), \
         'The length of the result and expected properties lists do not match.'
-    #assert results.ids is None, \
     assert getattr(results, "ids", None) is None, \
         'Result ids should be None'
-    assert results.source is None, \
+    assert getattr(results, 'source', None) is None, \
         'Result source should be None'
-    assert results.quantity is None, \
+    assert getattr(results, 'quantity', None) is None, \
         'Result quantity should be None'
-    assert results.preparation is None,\
+    assert getattr(results, 'preparation', None) is None,\
         'Result preparation should be None'
-    # assert results.subSystems is None,\
-    #     'Results subSystem should be None'
-    assert results.references is None,\
+    assert getattr(results, "subSystems", None) is None, \
+        'Results subSystem should be None'
+    assert getattr(results, 'references', None) is None,\
         'Results references should be None'
-    assert results.contacts is None, \
+    assert getattr(results, 'contacts', None) is None, \
         'Results contacts should be None'
-    assert results.licenses is None,\
+    assert getattr(results, 'licenses', None) is None,\
         'Results licenses should be None'
-    assert results.tags is None,\
+    assert getattr(results,'tags', None) is None,\
         'Results tags should be None'
 
 # NUM 15
@@ -578,33 +577,40 @@ def test_process_two_filenames(generate_expected_two_files):
         'Results and expected pifs differ in stress values'
     assert np.array_equal(C, D), \
         'Results snd expected pifs differ in strain values'
-    assert results.uid is None, \
+    assert getattr( results, 'uid', None) is None, \
         'Result UID should be None'
-    assert results.names is None, \
+    assert getattr(results, 'names', None) is None, \
         'Result should not be named'
-    assert results.classifications is None, \
+    assert getattr(results, 'classifications', None) is None, \
         'Result should not have any classifications.'
     assert len(results.properties) == \
         len(expected['stress'].properties) + \
         len(expected['strain'].properties), \
         'The length of the result and expected properties lists do not match.'
-    assert results.ids is None, \
+    assert getattr(results, "ids", None) is None, \
         'Result ids should be None'
-    assert results.source is None, \
+    assert getattr(results, 'source', None) is None, \
         'Result source should be None'
-    assert results.quantity is None, \
+    assert getattr(results, 'quantity', None) is None, \
         'Result quantity should be None'
-    assert results.preparation is None,\
+    assert getattr(results, 'preparation', None) is None,\
         'Result preparation should be None'
-    # assert results.subSystems is None,\
-    #     'Results subSystem should be None'
-    assert results.references is None,\
+    assert getattr(results, "subSystems", None) is None, \
+        'Results subSystem should be None'
+    assert getattr(results, 'references', None) is None,\
         'Results references should be None'
-    assert results.contacts is None, \
+    assert getattr(results, 'contacts', None) is None, \
         'Results contacts should be None'
-    assert results.licenses is None,\
+    assert getattr(results, 'licenses', None) is None,\
         'Results licenses should be None'
-    assert results.tags is None,\
+    assert getattr(results,'tags', None) is None,\
         'Results tags should be None'
+
+def test_bad_number_of_files():
+    with pytest.raises(Exception):
+        process_files(['resources/simple_data.json', 'resources/simple_data.json', 'resources/simple_data.json'])
+    with pytest.raises(Exception):
+        process_files([])
+
 
 

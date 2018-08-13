@@ -1,15 +1,7 @@
-import numpy as np
-# from citrine_converters import util
-# import sys
-# print('debug begin:')
-# for p in sys.path:
-#     print(p)
-
 from citrine_converters.util.listops import ensure_array_like
 from citrine_converters.util.listops import replace_if_present_else_append
 from citrine_converters.util.listops import reassignment_error
 from pypif import pif
-import pandas as pd
 
 def converter(files=[], **keywds):
     """
@@ -92,6 +84,15 @@ def process_files(filenames, dst=None):
     If multiple filenames are provided, then neither can have both stress
     and strain data.
 
+    All time data must be equivalent.
+
+    One or two files must be given
+
+    They must include time
+
+    They must include stress and strain
+
+
     :param dst: Destination for the stress and strain data.
     :type dst: pif.System
     :param filenames:
@@ -113,7 +114,7 @@ def process_files(filenames, dst=None):
         with open(r, 'r') as dataRight:
             right = pif.load(dataRight)
     else:
-        raise IOError("One or two filenames must be supplied to process_files")
+        raise IOError("One or two filenames must be supplied to process_files, {} provided".format(len(filenames)))
 
     # make sure dst is a pif.system()
     if type(dst) == pif.System():
@@ -127,7 +128,7 @@ def process_files(filenames, dst=None):
     # assign stress and strain to None for checking if they are reassigned
     stress = None
     strain = None
-    #TODO add a check to make sure time is included in found data, could do it after stress strain found
+
     try:
         if len(filenames) == 2:
 
@@ -149,7 +150,6 @@ def process_files(filenames, dst=None):
 
     # check if stress and strain are in the left file only
         elif len(filenames) == 1:
-            #TODO need a better way to check if stress strain are being reassigned for these ones MIGHT BE DONE
             if (left.properties[0].name == 'stress' and len(left.properties) == 2):
                 reassignment_error(stress)
                 stress = pif.System(properties=[pif.Property()])
