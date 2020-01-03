@@ -1,21 +1,14 @@
 from __future__ import division
 
 import numpy as np
-import warnings
 from matplotlib import pyplot as plt
-from itertools import groupby
-from scipy.signal import medfilt as median_filter
 from scipy.ndimage import gaussian_filter
-from scipy.stats import linregress
-from scipy.ndimage.morphology import binary_dilation, binary_erosion
 from ..tools import (
     linear_merge,
+    trim,
     Normalized,
     resample,
-    HoughSpace,
-    r_squared,
-    remove_outliers,
-    covariance)
+    HoughSpace)
 
 
 ELASTIC_OFFSET=0.002
@@ -44,13 +37,20 @@ class MechanicalProperties(object):
         must contain `time` and `strain` fields.
     :param sigma, pd.DataFrame: Stress data that, at a minimum, must
         contain `time` and `stress` fields.
+    :param interactive, bool: Whether to trip the stress and strain data
+        using an interactive plot.
     """
-    def __init__(self, epsilon, sigma):
+    def __init__(self, epsilon, sigma, interactive=False):
         # ##########
         # merge on time
         time, strain, stress = linear_merge(
             x1=epsilon['time'].values, y1=epsilon['strain'].values,
             x2=sigma['time'].values, y2=sigma['stress'].values)
+        if interactive:
+            mask = trim(strain, stress)
+            time = time[mask].copy()
+            strain = strain[mask].copy()
+            stress = stress[mask].copy()
         self.time   = time
         self.strain = strain
         self.stress = stress
