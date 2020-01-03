@@ -10,7 +10,7 @@ import numpy as np
 __version__ = '0.1'
 
 
-def converter(files=[], **keywds):
+def converter(files=[], **kwds):
     """
     Summary
     =======
@@ -40,14 +40,17 @@ def converter(files=[], **keywds):
 
     Keywords
     ========
-    :units, string: unit convention used in this stress-strain data.
+    :param units, string: unit convention used in this stress-strain data.
         Should be one of: {MPa, kip}
+    :param interactive, bool: If True, use interactive tools for approximating
+        the modulus before using ASTM E111 to finalize the calculation.
 
     Output
     ======
     PIF object.
     """
     # Handle input parameters
+    interactive = kwds.get('interactive', False)
     #+ ensure two files were provided
     try:
         left, right = files
@@ -121,7 +124,7 @@ def converter(files=[], **keywds):
     try:
         # units explicitly given supercede stress/strain input
         # does this make sense?
-        units = keywds['units'].lower()
+        units = kwds['units'].lower()
         if units == 'mpa':
             stress_units = 'MPa'
             strain_units = 'mm/mm'
@@ -144,7 +147,7 @@ def converter(files=[], **keywds):
 
     # Calculate the mechanical properties of the object
     mechprop = MechanicalProperties(epsilon, sigma)
-    best = set_elastic(mechprop)
+    best = set_elastic(mechprop, interactive=interactive)
     SE_modulus = best['SE modulus']
     # Create the PIF file
     results = [

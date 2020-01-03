@@ -2,6 +2,7 @@ from __future__ import division
 
 import numpy as np
 import warnings
+from matplotlib import pyplot as plt
 from itertools import groupby
 from scipy.signal import medfilt as median_filter
 from scipy.ndimage import gaussian_filter
@@ -348,6 +349,210 @@ def approximate_elastic_regime_from_hough(mechprop, **kwds):
     }
 
 
+def interactive_approximator(mechprop, **kwds) :
+    """
+    Raise an interactive matplotlib window for the user to select two
+    points in the elastic region.
+
+    :param mechprop, MechanicalPproperties: The object that contains the
+        stress-strain data.
+
+    Options
+    =======
+    :param rtol, float: "Width" of the line used to determine if a point should
+        be included in the linear region. If not specified, the selected points
+        define the upper and lower bounds along the strain axis.
+
+    :return: Dictionary of predicted values:
+        {
+            'elastic modulus' : m,
+            'elastic onset'   : -b/m,
+            'elastic strain'  : x[mask],
+            'elastic stress'  : y[mask],
+            'resampled'       : resampled,
+            'hough'           : hough }
+    where
+    :elastic modulus, float: slope of the elastic region (Young's modulus)
+    :elastic onset, float: Onset of elasticity.
+    :elastic strain, array: slice of the strain vector lying inside
+        the elastic region.
+    :elastic stress, array: slice of the stress vector lying inside
+        the elastic region.
+    :resampled, 2D array: Carry-over from a poor initial implementation.
+    :hough, 2D array: Carry-over from a poor initial implementation.
+    """
+    stress = mechprop.stress
+    strain = mechprop.strain
+
+    class DraggableLine:
+        lock = None  # only one can be animated at a time
+
+        def __init__(self, line):
+            self.cidpress = None
+            # self.cidrelease = None
+            self.cidmotion = None
+            self.line = line
+            self.selected, = line.axes.plot([], [], 'ro')
+            self.guide, = line.axes.plot([], [], 'r--')
+            self.first = None
+            self.second = None
+
+        def connect(self):
+            'connect to all the events we need'
+            self.cidpress = self.line.figure.canvas.mpl_connect(
+                'button_press_event', self.on_press)
+            # self.cidrelease = self.line.figure.canvas.mpl_connect(
+            #     'button_release_event', self.on_release)
+            self.cidmotion = self.line.figure.canvas.mpl_connect(
+                'motion_notify_event', self.on_motion)
+
+        def get_line_limits(self, x1, x2, y1, y2):
+            xlo, xhi = self.line.axes.get_xlim()
+            ylo, yhi = self.line.axes.get_ylim()
+            dy = y2 - y1
+            dx = x2 - x1
+            if np.isclose(dx, 0):
+                xmin = x1
+                xmax = x1
+                ymin = ylo
+                ymax = yhi
+            elif np.isclose(dy, 0):
+                xmin = xlo
+                xmax = xhi
+                ymin = y1
+                ymax = y1
+            else:
+                m = dy / dx
+                xmin = xlo
+                xmax = xhi
+                ymin = m * (xlo - x1) + y1
+                ymax = m * (xhi - x1) + y1
+            return ([xmin, xmax], [ymin, ymax])
+
+        def on_press(self, event):
+            'on button press we will see if the mouse is over us and store some data'
+            if DraggableLine.lock is not None:
+                return self.on_second(event)
+            if event.inaxes != self.line.axes: return
+            contains, attrd = self.line.contains(event)
+            if not contains: return
+            xdata = self.line.get_xdata()
+            ydata = self.line.get_ydata()
+            ind = np.argmin((xdata - event.xdata)**2 + (ydata - event.ydata)**2)
+            x0, y0 = xdata[ind], ydata[ind]
+            self.first = x0, y0
+            DraggableLine.lock = self
+
+            # now redraw the selected points
+            self.selected.set_xdata([x0])
+            self.selected.set_ydata([y0])
+
+            # draw everything but the selected lines and store the pixel buffer
+            canvas = self.line.figure.canvas
+            axes = self.line.axes
+            self.guide.set_animated(True)
+            axes.draw_artist(self.selected)
+            canvas.draw()
+            self.background = canvas.copy_from_bbox(self.line.axes.bbox)
+
+            # now redraw the guide line
+            x, y = self.get_line_limits(x0, event.xdata, y0, event.ydata)
+            self.guide.set_xdata(x)
+            self.guide.set_ydata(y)
+            axes.draw_artist(self.guide)
+
+            # and blit just the redrawn area
+            canvas.blit(axes.bbox)
+
+        def on_motion(self, event):
+            'on motion we will move the rect if the mouse is over us'
+            if DraggableLine.lock is not self:
+                return
+            if event.inaxes != self.line.axes: return
+            x1, y1 = self.first
+            x2, y2 = event.xdata, event.ydata
+            x, y = self.get_line_limits(x1, x2, y1, y2)
+            self.guide.set_xdata(x)
+            self.guide.set_ydata(y)
+
+            canvas = self.line.figure.canvas
+            axes = self.line.axes
+            # restore the background region
+            canvas.restore_region(self.background)
+
+            # redraw just the current rectangle
+            axes.draw_artist(self.guide)
+
+            # blit just the redrawn area
+            canvas.blit(axes.bbox)
+
+        def on_second(self, event):
+            'on release we reset the press data'
+            if DraggableLine.lock is not self: return
+            if event.inaxes != self.line.axes: return
+            contains, attrd = self.line.contains(event)
+            if not contains: return
+            xdata = self.line.get_xdata()
+            ydata = self.line.get_ydata()
+            ind = np.argmin((xdata - event.xdata)**2 + (ydata - event.ydata)**2)
+            x0, y0 = xdata[ind], ydata[ind]
+            self.second = x0, y0
+
+            # set the data for the selected points
+            x1, y1 = self.first
+            x2, y2 = self.second
+            self.selected.set_xdata([x1, x2])
+            self.selected.set_ydata([y1, y2])
+
+            # release the lock
+            DraggableLine.lock = None
+
+            # turn off the rect animation property and reset the background
+            self.guide.set_animated(False)
+            self.background = None
+
+            # redraw the full figure
+            # axes = self.line.axes
+            # axes.draw_artist(self.)
+            self.line.figure.canvas.draw()
+
+        def disconnect(self):
+            'disconnect all the stored connection ids'
+            self.line.figure.canvas.mpl_disconnect(self.cidpress)
+            # self.line.figure.canvas.mpl_disconnect(self.cidrelease)
+            self.line.figure.canvas.mpl_disconnect(self.cidmotion)
+
+    fig, ax = plt.subplots(1, 1)
+    line, = ax.plot(strain, stress, 'k:', picker=5)
+    dl = DraggableLine(line)
+    dl.connect()
+    plt.show(block=True)
+    xlo, ylo = dl.first
+    xhi, yhi = dl.second
+    if xhi < xlo:
+        xlo, xhi = xhi, xlo
+        ylo, yhi = yhi, ylo
+    m = (yhi-ylo)/(xhi-xlo)
+    b = ylo - m*xlo
+    # which points are close to this line?
+    if "rtol" in kwds:
+        mask = np.isclose(stress - m*strain, b, rtol=kwds['rtol'])
+    else:
+        mask = ((strain >= xlo) & (strain <= xhi))
+    # a.x = b
+    a = np.stack((np.where(mask)[0].astype(float), strain[mask]), axis=-1)
+    b = stress[mask]
+    ((b, m), residuals, rank, singularValues) = np.linalg.lstsq(a, b, rcond=None)
+    return {
+        'elastic modulus': m,
+        'elastic onset': -b/m,
+        'elastic strain': strain[mask],
+        'elastic stress': stress[mask],
+        'resampled': np.array([[]]),
+        'hough': np.array([[]])
+    }
+
+
 def set_elastic(mechprop, **kwds):
     """
     Sets the elastic properties for the provided MechanicalProperties
@@ -375,21 +580,25 @@ def set_elastic(mechprop, **kwds):
     """
     # ########################
     # handle keyword arguments
-    approximator = kwds.get('approximator',
-            approximate_elastic_regime_from_hough)
-
-    # maximum number of iterations
-    maxiter = kwds.get('maxiter', 20)
-
-    # set the target optimization (This is a minimization.)
-    if 'rsq' in kwds:
-        target = lambda cov, rsq : 1. - rsq
+    interactive = kwds.get('interactive', True)
+    if interactive:
+        approximator = interactive_approximator
     else:
-        # by default, optimize on the covariance
-        target = lambda cov, rsq : cov
+        approximator = approximate_elastic_regime_from_hough
 
-    # error in the strain gage measurement
-    error = np.abs(kwds.get('error', 0.00005))
+    # # maximum number of iterations
+    # maxiter = kwds.get('maxiter', 20)
+    #
+    # # set the target optimization (This is a minimization.)
+    # if 'rsq' in kwds:
+    #     target = lambda cov, rsq : 1. - rsq
+    # else:
+    #     # by default, optimize on the covariance
+    #     target = lambda cov, rsq : cov
+    #
+    # # error in the strain gage measurement
+    # # error = np.abs(kwds.get('error', 0.00005))
+    # error = np.abs(kwds.get('error', 0.00005))
 
     # ########################
     # strain = mechprop.strain
@@ -397,72 +606,183 @@ def set_elastic(mechprop, **kwds):
     approx = approximator(mechprop)
     epsilon = approx['elastic strain']
     sigma = approx['elastic stress']
-    modulus = approx['elastic modulus']
-    intercept = -modulus*approx['elastic onset']
 
     # ########################
-    # sigma = E epsilon + offset
-    # epsilon = e_calc = (sigma - offset)/E
-    # s.t.
-    # residual strain = e_measured - e_calc
-    predicted_strain = lambda s, E, b : (s - b)/E
-    residual_strain = lambda e, s, E, b: e - predicted_strain(s, E, b)
+    regression = calculate_modulus(epsilon, sigma)
+
+    modulus = regression['modulus']
+    intercept = -regression['elastic onset']*modulus
+    rsq = regression['coefficient of determination']
+    cov = regression['coefficient of variation']
+    ses = regression['standard error in the slope']
 
     # ########################
-    # use residual strain to minimize RMS residual strain
-    residual = residual_strain(epsilon, sigma, modulus, intercept)
-    mask = (residual < error)
-    # lower bound (end of compliance region)
-    for i in range(len(mask)):
-        if mask[i]:
-            lower = i
-            break
-    # upper bound (end of linear elastic region)
-    for i in reversed(range(len(mask))):
-        if mask[i]:
-            upper = i
-            break
-    mask[lower:upper] = True
-
-    # ########################
-    # exclude outliers (to help with noisy data) using IQR
-    # this should remove both outliers and the compliance region
-    # print "Iteration:",
-    # i = 0
-    for _ in range(len(epsilon)):
-        # i += 1
-        # print i,
-        previous = mask
-        modulus, intercept, corrcoeff, pvalue, SE_slope = \
-            linregress(epsilon[mask], sigma[mask])
-        residual = residual_strain(epsilon, sigma, modulus, intercept)
-        mask[mask] = remove_outliers(residual[mask])
-        # print "({} changed),".format(np.sum(np.logical_xor(mask, previous))),
-        if np.all(previous == mask):
-            # print ""
-            break
-    # print "Number points used in fit: {}".format(np.sum(mask))
+    # update the mechanical properties
+    mechprop.elastic_modulus = modulus
+    mechprop.elastic_onset = regression['elastic onset']
 
     # ########################
     # save the best
-    best = {
+    return {
         'param': [intercept, modulus],
-        'SE modulus': SE_slope,
-        'cov': covariance(epsilon[mask], predicted_strain(sigma[mask], modulus, intercept)),
-        'rsq': r_squared(epsilon[mask], predicted_strain(sigma[mask], modulus, intercept)),
-        'residual strain': residual,
+        'SE modulus': ses,
+        'cov': cov,
+        'rsq': rsq,
+        'residual strain': epsilon - sigma/modulus,
         'elastic strain': epsilon,
         'elastic stress': sigma,
-        'mask': mask,
+        'mask': np.ones_like(epsilon),
         'hough': approx['hough'],
         'resampled': approx['resampled']
     }
 
-    # ########################
-    # update the modulus of the mechanical properties
-    intercept, modulus = best['param']
-    mechprop.elastic_modulus = modulus
-    mechprop.elastic_onset = -intercept / modulus
+    # # ########################
+    # # sigma = E epsilon + offset
+    # # epsilon = e_calc = (sigma - offset)/E
+    # # s.t.
+    # # residual strain = e_measured - e_calc
+    # predicted_strain = lambda s, E, b: (s - b)/E
+    # residual_strain = lambda e, s, E, b: e - predicted_strain(s, E, b)
+    #
+    # # ########################
+    # # use residual strain to minimize RMS residual strain
+    # residual = residual_strain(epsilon, sigma, modulus, intercept)
+    # # residual = residual_strain(epsilon-approx['elastic onset'], sigma, modulus)
+    # # DEBUGGING #
+    # # import sys
+    # # from matplotlib import pyplot as plt
+    # # plt.plot(residual, sigma)
+    # # plt.show(block=True)
+    # # sys.exit(1)
+    # # END DEBUGGING #
+    # mask = (np.abs(residual) < error)
+    # # lower bound (end of compliance region)
+    # for i in range(len(mask)):
+    #     if mask[i]:
+    #         lower = i
+    #         break
+    # # upper bound (end of linear elastic region)
+    # for i in reversed(range(len(mask))):
+    #     if mask[i]:
+    #         upper = i
+    #         break
+    # mask[lower:upper] = True
+    #
+    # # ########################
+    # # exclude outliers (to help with noisy data) using IQR
+    # # this should remove both outliers and the compliance region
+    # # print "Iteration:",
+    # # i = 0
+    # for _ in range(len(epsilon)):
+    #     # i += 1
+    #     # print i,
+    #     previous = mask.copy()
+    #     modulus, intercept, corrcoeff, pvalue, SE_slope = \
+    #         linregress(epsilon[mask], sigma[mask])
+    #     residual = residual_strain(epsilon, sigma, modulus, intercept)
+    #     mask[mask] = remove_outliers(residual[mask])
+    #     # print "({} changed),".format(np.sum(np.logical_xor(mask, previous))),
+    #     if np.all(previous == mask):
+    #         # print ""
+    #         break
+    # print("Number points used in fit: {}/{}".format(np.sum(mask), len(mask)))
+    #
+    # # DEBUGGING #
+    # from matplotlib import pyplot as plt
+    # fig, ax = plt.subplots(1, 1)
+    # colors = [('darkgreen' if b else 'darkblue') for b in mask]
+    # ax.scatter(residual, sigma, c=colors)
+    # ax.axvline(-error, ls='--', color='r')
+    # ax.axvline(error, ls='--', color='r')
+    # plt.show()
+    # # # END DEBUGGING #
+    #
+    # # ########################
+    # # save the best
+    # best = {
+    #     'param': [intercept, modulus],
+    #     'SE modulus': SE_slope,
+    #     'cov': covariance(epsilon[mask], predicted_strain(sigma[mask], modulus, intercept)),
+    #     'rsq': r_squared(epsilon[mask], predicted_strain(sigma[mask], modulus, intercept)),
+    #     'residual strain': residual,
+    #     'elastic strain': epsilon,
+    #     'elastic stress': sigma,
+    #     'mask': mask,
+    #     'hough': approx['hough'],
+    #     'resampled': approx['resampled']
+    # }
+    #
+    # # ########################
+    # # update the modulus of the mechanical properties
+    # intercept, modulus = best['param']
+    # mechprop.elastic_modulus = modulus
+    # mechprop.elastic_onset = -intercept / modulus
+    #
+    # # done -- no iteration
+    # return best
 
-    # done -- no iteration
-    return best
+
+def calculate_modulus(strain, stress):
+    """
+    Calculates the modulus based on the ASTM E111.
+
+    The Young's modulus, :math:`E` is calculated from strain (:math:`X`) and
+    stress (:math:`Y`) data. The total number of points is :math:`N`
+
+    .. math::
+
+        E = \frac{\sum XY - N\overline{X}\overline{Y}}{\sum X^2 - N\overline{X}^2}
+
+    The coefficient of determination, :math:`r^2`, is given by
+
+    .. math::
+
+        r^2 = \frac{\left[ \sum XY - \frac{\sum X \sum Y}{N} \right]^2}{\left[ \sum X^2 - \left(\sum X\right)^2/N \right]\left[ \sum Y^2 - \left( \sum Y \right)^2/N \right]}
+
+    The coefficient of variation of the slope, :math:`V_1` is
+
+    .. math::
+
+        V_1 = 100 \sqrt{\frac{\frac{1}{r^2} - 1}{N - 2}}
+
+    The coefficient of variation of te slope should be lower than 2%. Values as
+    low as 0.5% have been achieved in aluminum. The confidence interval for the
+    regression, :math:`I`,
+
+    .. math::
+
+        \pm I = t V_1
+
+    :math:`t` is the t-statistic from standard tables at N-2 degrees of freedom.
+
+    :param strain:
+    :param stress:
+    :return:
+    """
+    x, y = np.asarray(strain), np.asarray(stress)
+    assert x.shape == y.shape, \
+        "The number of stress and strain observations must match."
+    N = len(x)
+    xbar, ybar = x.mean(), y.mean()
+
+    a = np.stack((np.ones_like(strain).astype(float), strain), axis=-1)
+    b = stress
+    ((b, m), residuals, rank, SV) = np.linalg.lstsq(a, b, rcond=None)
+
+    modulus = ((x*y).sum() - N*xbar*ybar) / \
+              ((x**2).sum() - N*xbar**2)
+    rsq = ((x*y).sum() - (xbar*ybar)/N) / \
+          (((x**2).sum() - xbar**2/N)*(y**2).sum() - ybar**2/N)
+
+    cov = 100*np.sqrt((1/rsq - 1)/(N - 2))
+
+    ses = np.sqrt((((y - ybar)**2).sum()) / \
+                  (((x - xbar)**2).sum()*(N-2)))
+
+    return {
+        'modulus': modulus,
+        'elastic onset': -b/modulus,
+        'coefficient of determination': rsq,
+        'coefficient of variation': cov,
+        'standard error in the slope': ses
+    }

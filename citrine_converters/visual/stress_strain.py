@@ -99,7 +99,7 @@ def plot_stress_strain_from_pif(obj,
     ductility = get_property(obj, 'ductility').scalars
     covariance = get_property(obj, 'covariance').scalars
     rsquared = get_property(obj, 'coefficient of variation').scalars
-    mask = np.array(get_property(obj, 'fitting mask').scalars)
+    elastic_mask = np.array(get_property(obj, 'fitting mask').scalars)
     # set stress-strain
     strain = np.array(get_property(obj, 'strain').scalars) - elastic_onset
     stress = np.array(get_property(obj, 'stress').scalars)
@@ -120,7 +120,7 @@ def plot_stress_strain_from_pif(obj,
     yoffset = (ylim[1] - ylim[0])*labeloffset
     # fitting
     if 'fitting' in kwds:
-        ax.plot(elastic_strain[mask], elastic_stress[mask],
+        ax.plot(elastic_strain[elastic_mask], elastic_stress[elastic_mask],
                 kwds['fitting'], label='fittings')
         _ = ax.text(0.95, 0.25,
                     'Covariance: {cov:.3f}\n' \
@@ -206,5 +206,6 @@ def plot_stress_strain_from_pif(obj,
     ax.set_xlabel(r'$\epsilon$ (${}$)'.format(units))
     units = get_property(obj, 'stress').units
     ax.set_ylabel(r'$\sigma$ (${}$)'.format(units))
+
     # done
     return ax
