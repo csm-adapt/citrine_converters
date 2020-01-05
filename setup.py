@@ -1,23 +1,32 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+"""
+    Setup file for citrine_converters.
 
-from setuptools import setup, find_packages
+    This file was generated with PyScaffold 3.0.3.
+    PyScaffold helps you to put up the scaffold of your new Python project.
+    Learn more under: http://pyscaffold.org/
+"""
+
+import sys
+from setuptools import setup
+
+# Add here console scripts and other entry points in ini-style format
+entry_points = """
+[console_scripts]
+# script_name = citrine_converters.module:function
+# For example:
+# fibonacci = citrine_converters.skeleton:run
+"""
 
 
-with open('README.rst') as f:
-    readme = f.read()
+def setup_package():
+    needs_sphinx = {'build_sphinx', 'upload_docs'}.intersection(sys.argv)
+    sphinx = ['sphinx'] if needs_sphinx else []
+    setup(setup_requires=['pyscaffold>=3.0a0,<3.1a0'] + sphinx,
+          entry_points=entry_points,
+          use_pyscaffold=True)
 
-with open('LICENSE') as f:
-    license = f.read()
 
-setup(
-    name='citrine_converters',
-    version='0.1',
-    description='X-to-PIF converters',
-    long_description=readme,
-    author='Branden Kappes',
-    author_email='bkappes@mines.edu',
-    url='N/A',
-    license=license,
-    packages=find_packages(exclude=('tests*', 'docs')),
-
-)
+if __name__ == "__main__":
+    setup_package()

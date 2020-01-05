@@ -1,0 +1,5 @@
+
+[console_scripts]
+# script_name = citrine_converters.module:function
+# For example:
+# fibonacci = citrine_converters.skeleton:run
